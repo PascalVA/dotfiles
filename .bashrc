@@ -51,11 +51,12 @@ fi
 export PROMPT_COMMAND=__prompt_command
 export HISTSIZE=50000
 export PATH=${HOME}/bin:${PATH}
-export EDITOR=vim
+export EDITOR=vi
 
 # add compose key
 export XKB_DEFAULT_OPTIONS=compose:ralt
 
+# aliases
 alias ls='ls --color=auto'
 alias ll="ls -l"
 alias gg="git grep"
@@ -63,4 +64,9 @@ alias gs="git status"
 alias vi=vim
 if [ "$(which nvim 2> /dev/null)" ]; then
     alias vim=nvim
+fi
+
+# include system specific settings if available
+if [ -e ~/.bashrc_custom ]; then
+    . ~/.bashrc_custom
 fi
