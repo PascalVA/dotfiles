@@ -49,6 +49,8 @@ if [ -e /usr/share/git/git-prompt.sh ]; then
 fi
 
 export PROMPT_COMMAND=__prompt_command
+# don't log duplicate commands or commands starting with spaces
+export HISTCONTROL=ignoreboth
 export HISTSIZE=50000
 export PATH=${HOME}/bin:${PATH}
 export EDITOR=vi
