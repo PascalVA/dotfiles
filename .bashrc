@@ -24,6 +24,8 @@ grum () {
 function __prompt_command () {
     local exitcode=$?
     local virtual_env=$(basename ${VIRTUAL_ENV:-""})
+    local grey="\[\e[00;90m\]"
+    local yellow="\[\e[00;33m\]"
     local blue="\[\e[00;34m\]"
     local lblue="\[\e[00;94m\]"
     local lgrey="\[\e[00;37m\]"
@@ -49,11 +51,11 @@ if [ -e /usr/share/git/git-prompt.sh ]; then
 fi
 
 export PROMPT_COMMAND=__prompt_command
-# don't log duplicate commands or commands starting with spaces
-export HISTCONTROL=ignoreboth
-export HISTSIZE=50000
+export HISTCONTROL=ignoreboth  # don't log duplicate commands or commands starting with spaces
+export HISTSIZE=-1
+
 export PATH=${HOME}/bin:${PATH}
-export EDITOR=vi
+export EDITOR=vim
 
 # add compose key
 export XKB_DEFAULT_OPTIONS=compose:ralt
@@ -61,14 +63,35 @@ export XKB_DEFAULT_OPTIONS=compose:ralt
 # aliases
 alias ls='ls --color=auto'
 alias ll="ls -l"
+alias gc="git commit"
+alias gd="git diff"
+alias gds="git diff --staged"
+alias gco="git checkout"
 alias gg="git grep"
+alias gr="git restore"
 alias gs="git status"
-alias vi=vim
+alias gwl="git worktree list"
+alias gwr="git worktree remove"
+alias vi="vim"
+# common typos
+alias gti=git
+alias kubeclt=kubectl
+
+# nvim if installed
 if [ "$(which nvim 2> /dev/null)" ]; then
     alias vim=nvim
 fi
+
+# source custom bash completion dir
+for comp_file in $(find ~/.bash_completion.d -type f); do
+    . $comp_file
+done
 
 # include system specific settings if available
 if [ -e ~/.bashrc_custom ]; then
     . ~/.bashrc_custom
 fi
+
+# easy completion search
+bind '\C-n:menu-complete'
+bind '\C-p:menu-complete-backward'
