@@ -1,6 +1,6 @@
 ! .Xdefaults is automatically read by urxvt
 URxvt.scrollBar:       false
-URxvt.font:            xft:DejaVuSansMono:size=12
+URxvt.font:            xft:DejaVuSansMono:size=11
 URxvt.internalBorder:  8
 
 urxvt.background:      #000000
