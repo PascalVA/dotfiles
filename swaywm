@@ -14,15 +14,15 @@ set $down j
 set $up k
 set $right l
 # Your preferred terminal emulator
-set $term urxvt
+set $term alacritty
 # Your preferred application launcher
 # Note: it's recommended that you pass the final command to sway
-set $menu dmenu_path | dmenu | xargs swaymsg exec
+set $menu bemenu-run --line-height=31 --tf="#79a4d7" --hf="#79a4d7" | xargs swaymsg exec
 
 ### Output configuration
 #
 # Default wallpaper (more resolutions are available in /usr/share/backgrounds/sway/)
-output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
+#output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 #
 # Example configuration:
 #
@@ -82,7 +82,7 @@ output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
     bindsym $mod+Shift+c reload
 
     # exit sway (logs you out of your Wayland session)
-    bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'
+    bindsym $mod+Shift+e exec swaymsg exit
 #
 # Moving around:
 #
@@ -201,41 +201,48 @@ bindsym $mod+r mode "resize"
 #
 # Read `man 5 sway-bar` for more information about this section.
 bar {
-    position top
-
-    # When the status_command prints a new line to stdout, swaybar updates.
-    # The default just shows the current date and time.
-    status_command while date +'%Y-%m-%d %l:%M:%S %p'; do sleep 1; done
-
-    colors {
-        statusline #ffffff
-        background #323232
-        inactive_workspace #32323200 #32323200 #5c5c5c
-    }
-
-    # CUSTOM SETTINGS
-    tray_output none
-
+     swaybar_command waybar
 }
+#bar {
+#    position top
+#
+#    # When the status_command prints a new line to stdout, swaybar updates.
+#    # The default just shows the current date and time.
+#    status_command while date +'%Y-%m-%d %l:%M:%S %p'; do sleep 1; done
+#
+#    colors {
+#        statusline #ffffff
+#        background #323232
+#        inactive_workspace #32323200 #32323200 #5c5c5c
+#    }
+#
+#    # CUSTOM SETTINGS
+#    tray_output none
+#
+#}
 
 include /etc/sway/config.d/*
 
 # CUSTOM CONFIG
-output * background $HOME/Pictures/wallpaper.jpg fill
+
+# use swaymsg -t get_inputs to find the keyboard
+input 9494:32:CM_Storm_Quickfire_Rapid_i {
+    xkb_options compose:ralt
+}
 
 # lock screen key
-bindsym Alt+l exec swaylock -i $HOME/Pictures/wallpaper.jpg
+bindsym $mod+Ctrl+l exec swaylock -i $HOME/Pictures/lockscreen.jpg
 
 # automatically lock screen
 exec swayidle -w \
-         timeout 300 'swaylock -f $HOME/Pictures/wallpaper.jpg' \
+         timeout 300 'swaylock -i $HOME/Pictures/lockscreen.jpg' \
          timeout 600 'swaymsg "output * dpms off"' \
               resume 'swaymsg "output * dpms on"' \
-         before-sleep 'swaylock -f $HOME/Pictures/wallpaper.jpg'
+         before-sleep 'swaylock -i $HOME/Pictures/lockscreen.jpg'
 
 # Pulse Audio controls
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume 0 +5% #increase sound volume
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume 0 -5% #decrease sound volume
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5% #increase sound volume
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5% #decrease sound volume
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute 0 toggle # mute sound
 
 # Sreen brightness controls
@@ -246,9 +253,51 @@ bindsym XF86MonBrightnessDown exec xbacklight -dec 20 # decrease screen brightne
 bindsym XF86TouchpadToggle exec /some/path/toggletouchpad.sh # toggle touchpad
 
 # Media player controls
-bindsym XF86AudioPlay exec playerctl play
-bindsym XF86AudioPause exec playerctl pause
+bindsym XF86AudioPlay exec playerctl play-pause
 bindsym XF86AudioNext exec playerctl next
 bindsym XF86AudioPrev exec playerctl previous
+bindsym XF86AudioStop stop playerctl previous
+
+# keybinds
+## Take a screenshot of the screen in focus
+bindsym print exec grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') $HOME/screenshot-$(date +'%Y-%m-%d-%H%M%S_grim.png').png
 
 default_border pixel
+
+# Setup displays
+output HDMI-A-1 bg $HOME/Pictures/lake-wallpaper.jpg fill
+output HDMI-A-2 bg $HOME/Pictures/lake-wallpaper.jpg fill
+output HDMI-A-1 resolution 1920x1080 position 1920,0
+output HDMI-A-2 resolution 1920x1080 position 0,0
+
+# Pre-assign workspaces
+workspace 1 output HDMI-A-2
+workspace 2 output HDMI-A-2
+workspace 3 output HDMI-A-2
+workspace 4 output HDMI-A-2
+workspace 5 output HDMI-A-2
+workspace 6 output HDMI-A-1
+workspace 7 output HDMI-A-1
+workspace 8 output HDMI-A-1
+workspace 9 output HDMI-A-1
+workspace 10 output HDMI-A-1
+
+# Assign apps to dedicated workspaces
+assign [class="firefox"] 2
+assign [class="Chromium"] 8
+assign [class="Slack"] 7
+assign [class="Thunderbird"] 8
+assign [class="Boostnote"] 9
+assign [class="TelegramDesktop"] 10
+
+# keybinds
+bindsym $mod+F2 exec firefox; workspace 2
+bindsym $mod+F7 exec slack; workspace 2
+bindsym $mod+F8 exec chromium; workspace 2
+
+# when you press the workspace of the window you are on
+# you will go back to the previous window
+workspace_auto_back_and_forth yes
+
+# Start the notification manager
+exec mako --anchor top-center --default-timeout 5000 --width 600
