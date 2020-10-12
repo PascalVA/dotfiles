@@ -56,6 +56,7 @@ export HISTSIZE=-1
 
 export PATH=${HOME}/bin:${PATH}
 export EDITOR=vim
+export KUBE_EDITOR=vim
 
 # add compose key
 export XKB_DEFAULT_OPTIONS=compose:ralt
@@ -63,19 +64,20 @@ export XKB_DEFAULT_OPTIONS=compose:ralt
 # aliases
 alias ls='ls --color=auto'
 alias ll="ls -l"
+
 alias gc="git commit"
 alias gd="git diff"
 alias gds="git diff --staged"
 alias gco="git checkout"
 alias gg="git grep"
-alias gr="git restore"
+alias gr="git reset"
+alias grh="git reset --hard"
 alias gs="git status"
+alias gwa="git worktree add"
 alias gwl="git worktree list"
 alias gwr="git worktree remove"
 alias vi="vim"
-# common typos
 alias gti=git
-alias kubeclt=kubectl
 
 # nvim if installed
 if [ "$(which nvim 2> /dev/null)" ]; then
@@ -95,3 +97,9 @@ fi
 # easy completion search
 bind '\C-n:menu-complete'
 bind '\C-p:menu-complete-backward'
+
+# Base16 Shell (required for NVM base16 colorschemes
+BASE16_SHELL="$HOME/.config/base16-shell/"
+[ -n "$PS1" ] && \
+    [ -s "$BASE16_SHELL/profile_helper.sh" ] && \
+        eval "$("$BASE16_SHELL/profile_helper.sh")"
