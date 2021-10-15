@@ -1,0 +1,82 @@
+#
+# bash configuration for git
+#
+
+# GitResetUpstreamMaster
+# Resets the local master branch to "upstream/master"
+grum () {
+    git status >/dev/null # Make sure we are in a git repo
+    if [ "$?" -eq "128" ]; then
+        return
+    fi
+
+    if [ "$(git symbolic-ref --short HEAD)" = "master" ]; then
+         git fetch upstream && git checkout -B master upstream/master --no-track
+    else
+         git fetch upstream master:master
+    fi
+}
+
+# resets a local branch
+#   by default it resets to upstream
+#   optionally specify a custom <remote> as an argument to the function
+_git_update_branch () {
+    # make sure we are in a git repo
+    git status > /dev/null
+    if [ "$?" -ne "0" ]; then
+        return
+    fi
+
+    if [ -z $1 ]; then
+      # set current branch if not detached HEAD
+      git symbolic-ref --short HEAD >/dev/null
+      if [ "$?" -ne "0" ]; then
+          return
+      else
+          branch_name="$(git symbolic-ref --short HEAD 2> /dev/null)"
+      fi
+    fi
+
+    branch_name=${1:-$branch_name}
+
+    if [ "$(git symbolic-ref --short HEAD)" = "$branch_name" ]; then
+         command="git fetch upstream && git checkout -B $branch_name upstream/$branch_name --no-track"
+    else
+         command="git fetch upstream $branch_name:$branch_name"
+    fi
+
+    echo "+ $command"; eval $command
+}
+
+# pushes branch to the origin specified as the first argument
+#   defaults to origin
+_git_push_branch () {
+    git push -u ${1:-origin} $(git symbolic-ref --short HEAD)
+}
+
+# backs up a branch to the branch name with a timestamp
+# then prints the brnahces that include the original branch name
+_git_backup_branch () {
+    git branch $(git rev-parse --abbrev-ref HEAD)--$(date "+%Y%m%d_%H%M") && \
+    git branch -a | grep -i $(git rev-parse --abbrev-ref HEAD)
+}
+
+# git aliases
+alias gaf="git commit --am --no-edit && git push -f"
+alias gbb="_git_backup_branch"
+alias gc="git commit"
+alias gco="git checkout"
+alias gd="git diff --ws-error-highlight=default,old,new"
+alias gds="git diff --staged --ws-error-highlight=default,old,new"
+alias gg="git grep"
+alias gpbo="_git_push_branch origin"
+alias gpbu="_git_push_branch upstream"
+alias gr="git reset"
+alias grh="git reset --hard"
+alias gs="git status"
+alias gti=git
+alias gu="_git_update_branch"
+alias gwa="git worktree add"
+alias gwl="git worktree list"
+alias gwr="git worktree remove"
+alias vi="vim"

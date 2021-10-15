@@ -5,22 +5,42 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-# GitResetUpstreamMaster
-# Resets the local master branch to "upstream/master"
-grum () {
-    git status >/dev/null # Make sure we are in a git repo
-    if [ "$?" -eq "128" ]; then
-        return
-    fi
+# real script path and parent directory name
+THIS_REAL_FILE=$(readlink -e ${BASH_SOURCE[0]})
+THIS_REAL_DIR=$(dirname ${THIS_REAL_FILE})
 
-    if [ "$(git symbolic-ref --short HEAD)" = "master" ]; then
-         git fetch upstream && git checkout -B master upstream/master --no-track
-    else
-         git fetch upstream master:master
-    fi
-}
+#
+# INCLUDE SOURCE FILES
+#
 
-# Prompt
+# source program specific source files
+for bash_source in $(find ${THIS_REAL_DIR}/source.bash/ -type f); do
+    source ${bash_source}
+done
+
+# source system bash completion dir
+if [ -d /etc/bash_completion.d ]; then
+    for comp_file in $(find /etc/bash_completion.d -type f); do
+        . $comp_file
+    done
+fi
+
+# source custom bash completion dir
+if [ -d ~/.bash_completion.d ]; then
+    for comp_file in $(find ~/.bash_completion.d -type f); do
+        . $comp_file
+    done
+fi
+
+# include system specific settings if available
+if [ -e ~/.bashrc_custom ]; then
+    . ~/.bashrc_custom
+fi
+
+#
+# PROMPT CONFIG
+#
+
 function __prompt_command () {
     local exitcode=$?
     local virtual_env=$(basename ${VIRTUAL_ENV:-""})
@@ -42,19 +62,29 @@ function __prompt_command () {
         local cexit="${lred}$exitcode${reset}"
     fi
 
-    PS1="${blue}\h${lgrey}${virtual_env:+" $virtual_env"}${lblue} \w${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
+    PS1="${blue}\h${lgrey}${virtual_env:+" 🚀$virtual_env"}${lblue} \w${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
 }
 
 # source git prompt if git is installed
 if [ -e /usr/share/git/git-prompt.sh ]; then
     . /usr/share/git/git-prompt.sh
+elif [ /usr/lib/git-core/git-sh-prompt ]; then
+    . /usr/lib/git-core/git-sh-prompt
 fi
 
-export PROMPT_COMMAND=__prompt_command
-export HISTCONTROL=ignoreboth  # don't log duplicate commands or commands starting with spaces
-export HISTSIZE=-1
+PROMPT_COMMAND=__prompt_command
 
-export PATH=${HOME}/bin:${PATH}
+
+#
+# HISTORY CONFIG
+#
+
+HISTCONTROL=ignoreboth  # don't log duplicate commands or commands starting with spaces
+HISTTIMEFORMAT="%d/%m/%y %T "
+HISTSIZE=-1
+HISTFILESIZE=-1
+
+export PATH=${HOME}/bin:/usr/local/go/bin:${PATH}
 export EDITOR=vim
 export KUBE_EDITOR=vim
 
@@ -65,33 +95,18 @@ export XKB_DEFAULT_OPTIONS=compose:ralt
 alias ls='ls --color=auto'
 alias ll="ls -l"
 
-alias gc="git commit"
-alias gd="git diff"
-alias gds="git diff --staged"
-alias gco="git checkout"
-alias gg="git grep"
-alias gr="git reset"
-alias grh="git reset --hard"
-alias gs="git status"
-alias gwa="git worktree add"
-alias gwl="git worktree list"
-alias gwr="git worktree remove"
-alias vi="vim"
-alias gti=git
+# fix mosh locale warnings
+alias mosh="LC_ALL=en_US.UTF-8 mosh"
 
-# nvim if installed
-if [ "$(which nvim 2> /dev/null)" ]; then
-    alias vim=nvim
+# use vim if installed
+if [ "$(which vim 2> /dev/null)" ]; then
+    alias vi=vim
 fi
 
-# source custom bash completion dir
-for comp_file in $(find ~/.bash_completion.d -type f); do
-    . $comp_file
-done
-
-# include system specific settings if available
-if [ -e ~/.bashrc_custom ]; then
-    . ~/.bashrc_custom
+# use nvim if installed
+if [ "$(which nvim 2> /dev/null)" ]; then
+    alias vi=nvim
+    alias vim=nvim
 fi
 
 # easy completion search
@@ -99,7 +114,7 @@ bind '\C-n:menu-complete'
 bind '\C-p:menu-complete-backward'
 
 # Base16 Shell (required for NVM base16 colorschemes
-BASE16_SHELL="$HOME/.config/base16-shell/"
-[ -n "$PS1" ] && \
-    [ -s "$BASE16_SHELL/profile_helper.sh" ] && \
-        eval "$("$BASE16_SHELL/profile_helper.sh")"
+#BASE16_SHELL="$HOME/.config/base16-shell/"
+#[ -n "$PS1" ] && \
+#    [ -s "$BASE16_SHELL/profile_helper.sh" ] && \
+#        eval "$("$BASE16_SHELL/profile_helper.sh")"

@@ -1,0 +1,39 @@
+#
+# PASSBOLT
+#
+
+# get a password from passbolt from the cli
+function pbget {
+    local lred="\e[00;91m"
+    local reset="\e[0m"
+    if [ -z "$1" ]; then
+        echo -e "No search string found!\nUsage:\n  pbget 'SEARCH WORDS'"
+        return 1
+    fi
+
+    local result=$(passbolt find | grep "$1")
+
+    if [ -z "$result" ]; then
+        echo -e "${lred}No Results Found!${reset}"
+    else
+        local line_count=$(echo "$result" | wc -l)
+        if [ $line_count -gt 1 ]; then
+            echo "$result"
+            echo -e "${lred}More than one result found, please use the exact key name${reset}"
+
+            return 1
+        fi
+
+        local password_uuid=$(echo $result | awk '{print $NF}')
+        local password_result=$(passbolt get "$password_uuid")
+        local password=$(echo "$password_result" | gpg --decrypt)
+
+        echo $password_result
+        echo "uuid: $password_uuid"
+        echo "password: $password"
+        echo "$password" | xclip
+    fi
+}
+
+# search for a password by name on passbolt
+alias pbfind="passbolt find | grep $@"
