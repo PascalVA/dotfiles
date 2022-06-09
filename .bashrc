@@ -113,7 +113,11 @@ function __prompt_command () {
         local cexit="${lred}$exitcode${reset}"
     fi
 
-    PS1="${PS1_HOST_COLOR:-}\h${reset}$(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
+    if [ -n "$PS1_HOST_COLOR" ]; then
+        PS1_HOST_COLOR_EXPANDED=${!PS1_HOST_COLOR}
+    fi
+
+    PS1="${PS1_HOST_COLOR_EXPANDED:-}\h${reset}$(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
 }
 
 # source git prompt if git is installed
@@ -174,7 +178,9 @@ alias kn='kubens'
 alias kubeclt='kubectl'
 
 # source kubectl command aliases
-source ~/github/ahmetb/kubectl-aliases/.kubectl_aliases
+if [ -f "${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
+    source ${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases
+fi
 
 # dockerized apps
 alias az='docker run --rm -ti --log-driver=none --user $UID --workdir=/workdir -v $(pwd):/workdir -v ~/.azure:/.azure mcr.microsoft.com/azure-cli az'
@@ -200,16 +206,6 @@ fi
 alias watch='watch '
 
 # source alias completions
-source ~/github/cykerway/complete-alias/complete_alias
-
-#
-# SSH
-#
-
-# use fixed ssh auth socket for ssh agent
-export SSH_AUTH_SOCK=/var/run/user/$UID/ssh-agent
-
-# start ssh-agent if it is not already started
-if [ ! "$(ps -ux | grep [s]sh-agent)" ]; then
-    ssh-agent -a $SSH_AUTH_SOCK
+if [ -f "${HOME}/github/cykerway/complete-alias/complete_alias" ]; then
+    source ${HOME}/github/cykerway/complete-alias/complete_alias
 fi
