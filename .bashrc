@@ -2,12 +2,19 @@
 # ~/.bashrc
 #
 
+#
+# CONFIG
+#
+
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
 # real script path and parent directory name
 THIS_REAL_FILE=$(readlink -e ${BASH_SOURCE[0]})
 THIS_REAL_DIR=$(dirname ${THIS_REAL_FILE})
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 #
 # INCLUDE SOURCE FILES
@@ -120,7 +127,7 @@ PROMPT_COMMAND=__prompt_command
 
 
 #
-# HISTORY CONFIG
+# SHELL CONFIG
 #
 
 HISTCONTROL=ignoreboth  # don't log duplicate commands or commands starting with spaces
@@ -130,6 +137,10 @@ HISTFILESIZE=-1
 
 # append to the history file, don't overwrite it
 shopt -s histappend
+
+# check the window size after each command, if necessary,
+# update the values of LINES and COLUMNS
+shopt -s checkwinsize
 
 #
 # ENVIRONMENT SETUP
@@ -151,14 +162,16 @@ export XKB_DEFAULT_OPTIONS=compose:ralt
 #
 # ALIASES
 #
-alias ls='ls --color=auto'
-alias ll="ls -l"
+alias ls='LC_COLLATE=C ls --color -h --group-directories-first --sort=extension'
+alias la='ls -a'
+alias ll='ls -alF'
+alias l='ls -CF'
 alias master='cd ~/gitlab/p.vanacker/sys-infrastructure && source .venvs/master.sh'
+alias ac='ansible-console'
 alias av='ansible-vault'
 alias ap='ansible-playbook'
-alias apc='ansible-playbook cluster_deployment.yml'
-alias apd='ansible-playbook domain_deployment.yml'
 alias kn='kubens'
+alias kubeclt='kubectl'
 
 # source kubectl command aliases
 source ~/github/ahmetb/kubectl-aliases/.kubectl_aliases
@@ -188,3 +201,15 @@ alias watch='watch '
 
 # source alias completions
 source ~/github/cykerway/complete-alias/complete_alias
+
+#
+# SSH
+#
+
+# use fixed ssh auth socket for ssh agent
+export SSH_AUTH_SOCK=/var/run/user/$UID/ssh-agent
+
+# start ssh-agent if it is not already started
+if [ ! "$(ps -ux | grep [s]sh-agent)" ]; then
+    ssh-agent -a $SSH_AUTH_SOCK
+fi

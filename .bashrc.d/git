@@ -62,12 +62,15 @@ _git_backup_branch () {
 }
 
 # git aliases
-alias gaf="git commit --am --no-edit && git push -f"
+alias ga="git add"
+alias gcanf="git commit --am --no-edit && git push -f"
 alias gbb="_git_backup_branch"
+alias gb="git branch -vv"
 alias gc="git commit"
 alias gco="git checkout"
 alias gd="git diff --ws-error-highlight=default,old,new"
 alias gds="git diff --staged --ws-error-highlight=default,old,new"
+alias gl="git log --oneline"
 alias gg="git grep"
 alias gpbo="_git_push_branch origin"
 alias gpbu="_git_push_branch upstream"
@@ -78,5 +81,4 @@ alias gti=git
 alias gu="_git_update_branch"
 alias gwa="git worktree add"
 alias gwl="git worktree list"
-alias gwr="git worktree remove"
-alias vi="vim"
+alias gwr="git worktree remove --force"
