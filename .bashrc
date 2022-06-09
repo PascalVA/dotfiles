@@ -106,7 +106,7 @@ function __prompt_command () {
         local cexit="${lred}$exitcode${reset}"
     fi
 
-    PS1="${lcyan}\h${reset}$(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
+    PS1="${PS1_HOST_COLOR:-}\h${reset}$(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
 }
 
 # source git prompt if git is installed
