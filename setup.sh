@@ -5,9 +5,15 @@ THIS_REAL_FILE=$(readlink -e ${BASH_SOURCE[0]})
 THIS_REAL_DIR=$(dirname ${THIS_REAL_FILE})
 
 # symlink configuration files
-for _filename in .bashrc .profile .inputrc .tmux.conf; do
+for _filename in .bashrc .profile .inputrc .tmux.conf .vimrc; do
     ln -sf ${THIS_REAL_DIR}/$_filename ${HOME}/$_filename
 done
+
+# symlink the nvim config file
+if [ ! -d "${HOME}/.config/nvim" ]; then
+     ${HOME}/.config/nvim
+fi
+ln -sf ${THIS_REAL_DIR}/alacritty.yml ${HOME}/.config/nvim/init.vim
 
 # symlink alacritty config file
 if [ ! -d "${HOME}/.config/alacritty" ]; then
