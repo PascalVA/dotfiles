@@ -14,13 +14,14 @@ call vundle#begin()
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
 
-Plugin 'tpope/vim-fugitive'        " git
-Plugin 'kien/ctrlp.vim'            " fuzzy finder
-Plugin 'sainnhe/sonokai'           " colorscheme
-Plugin 'sonph/onehalf', { 'rtp': 'vim' }
-Plugin 'sheerun/vim-polyglot'      " language packs (Syntax Highlighting)
-Plugin 'vim-scripts/AutoComplPop'  " automatically complete while typing
-Plugin 'fatih/vim-go'              " golang integration
+Plugin 'tpope/vim-fugitive'              " git
+Plugin 'kien/ctrlp.vim'                  " fuzzy finder
+Plugin 'sainnhe/sonokai'                 " colorscheme
+Plugin 'sonph/onehalf', { 'rtp': 'vim' } " colorscheme
+Plugin 'sheerun/vim-polyglot'            " language packs (Syntax Highlighting)
+Plugin 'vim-scripts/AutoComplPop'        " automatically complete while typing
+Plugin 'ntpeters/vim-better-whitespace'  " highlight trailing spaces
+Plugin 'fatih/vim-go'                    " golang integration
 
 " all of your Plugins must be added before the following line
 call vundle#end()            " required
