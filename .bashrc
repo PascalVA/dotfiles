@@ -21,10 +21,6 @@ THIS_REAL_DIR=$(dirname ${THIS_REAL_FILE})
 #
 
 # source program specific source files
-for bash_source in $(find ${THIS_REAL_DIR}/.bashrc.d/ -type f); do
-    source ${bash_source}
-done
-
 if [ -d  "${HOME}/.bashrc.d/" ]; then
     for bash_source in $(find ${HOME}/.bashrc.d/ -type f); do
         source ${bash_source}
@@ -52,10 +48,10 @@ if [ "$(which kubectl 2> /dev/null)" ]; then
     source <(kubectl completion bash)
 fi
 
+
 #
 # HELPER FUNCTIONS
 #
-
 
 #
 # PROMPT
@@ -170,7 +166,6 @@ alias ls='LC_COLLATE=C ls --color -h --group-directories-first --sort=extension'
 alias la='ls -a'
 alias ll='ls -alF'
 alias l='ls -CF'
-alias master='cd ~/gitlab/p.vanacker/sys-infrastructure && source .venvs/master.sh'
 alias ac='ansible-console'
 alias av='ansible-vault'
 alias ap='ansible-playbook'
