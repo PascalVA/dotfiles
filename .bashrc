@@ -20,9 +20,16 @@ THIS_REAL_DIR=$(dirname ${THIS_REAL_FILE})
 # INCLUDE SOURCE FILES
 #
 
-# source program specific source files
+# source local bashrc files
 if [ -d  "${HOME}/.bashrc.d/" ]; then
     for bash_source in $(find ${HOME}/.bashrc.d/ -type f); do
+        source ${bash_source}
+    done
+fi
+
+# source program specific source files from dotfiles
+if [ -d  "${THIS_REAL_DIR}/.bashrc.d/" ]; then
+    for bash_source in $(find ${THIS_REAL_DIR}/.bashrc.d/ -type f); do
         source ${bash_source}
     done
 fi

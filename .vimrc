@@ -34,11 +34,11 @@ filetype plugin indent on    " required To ignore plugin indent changes, instead
 "
 
 " enable full color support in terminal
-if has('termguicolors')
-  let &t_8f="\<Esc>[38;2;%lu;%lu;%lum"  " required for alacritty to display colors in tmux
-  let &t_8b="\<Esc>[48;2;%lu;%lu;%lum"  " required for alacritty to display colors in tmux
-  set termguicolors
-endif
+"if has('termguicolors')
+"  let &t_8f="\<Esc>[38;2;%lu;%lu;%lum"  " required for alacritty to display colors in tmux
+"  let &t_8b="\<Esc>[48;2;%lu;%lu;%lum"  " required for alacritty to display colors in tmux
+"  set termguicolors
+"endif
 
 "let g:sonokai_style = 'andromeda'
 "let g:sonokai_enable_italic = 1          " italic causes bg color change in tmux
@@ -51,8 +51,14 @@ colorscheme onehalfdark
 " VIM SETTINGS
 "
 
+" allow for easy pasting
+set paste
+
+" use system clipboard when yanking
+set clipboard=unnamedplus
+
 " statusline
-:set laststatus=2
+set laststatus=2
 
 " tabs to spaces
 set tabstop=4    " show existing tab with 4 spaces width
