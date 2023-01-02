@@ -61,8 +61,22 @@ _git_backup_branch () {
     git branch -a | grep -i $(git rev-parse --abbrev-ref HEAD)
 }
 
+function _cd_git_repo {
+    if [ -z "$GIT_REPO_DIR" ]; then
+        echo "The GIT_REPO_DIR env var is not set!" >&2
+    else
+        if [ "$#" -eq "0" ]; then
+            git_dir=$(ls $GIT_REPO_DIR | fzf)
+        else
+            git_dir=$1
+        fi
+        cd "${GIT_REPO_DIR}/${git_dir}/"
+    fi
+}
+
 # git aliases
 alias ga="git add"
+alias gcd="_cd_git_repo"
 alias gcanf="git commit --am --no-edit && git push -f"
 alias gbb="_git_backup_branch"
 alias gb="git branch -vv"
