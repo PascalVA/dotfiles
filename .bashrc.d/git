@@ -66,11 +66,22 @@ function _cd_git_repo {
         echo "The GIT_REPO_DIR env var is not set!" >&2
     else
         if [ "$#" -eq "0" ]; then
-            git_dir=$(ls $GIT_REPO_DIR | fzf)
+            _git_repos=$(find "$GIT_REPO_DIR" -type d -name .git)
+            if [ -n "$_git_repos" ]; then
+                _git_repo_dir=$(echo $_git_repos | xargs dirname | sed "s#$GIT_REPO_DIR\/##" | fzf)
+                _git_repo_dir="${GIT_REPO_DIR}/${_git_repo_dir}"
+            else
+                echo "No git repositories found in \$GIT_REPO_DIR\"" >&2
+            fi
         else
-            git_dir=$1
+            _git_repo_dir="${GIT_REPO_DIR}/$1"
         fi
-        cd "${GIT_REPO_DIR}/${git_dir}/"
+
+        if [ -d "$_git_repo_dir" ]; then
+            cd $_git_repo_dir
+        else
+            echo "The directory \"${_git_repo_dir}\" does not exist!" >&2
+        fi
     fi
 }
 
