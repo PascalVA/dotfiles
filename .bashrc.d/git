@@ -74,7 +74,7 @@ function _git_cd_repo {
         fi
 
         if [ "$#" -eq "0" ]; then
-            _git_repos=$(find "$GIT_REPO_DIR" -name .git)
+            _git_repos=$(find "$GIT_REPO_DIR" -maxdepth 3 -name .git)
             if [ -n "$_git_repos" ]; then
                 _git_repo_dir=$(echo $_git_repos | xargs dirname | sed "s#$GIT_REPO_DIR\/##" | fzf)
                 _git_repo_dir="${GIT_REPO_DIR}/${_git_repo_dir}"
