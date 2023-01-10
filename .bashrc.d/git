@@ -61,10 +61,18 @@ _git_backup_branch () {
     git branch -a | grep -i $(git rev-parse --abbrev-ref HEAD)
 }
 
-function _cd_git_repo {
+# Searches for all files or directories named .git in GIT_REPO_DIR
+# and presents a fuzzy find list of directories to cd to
+function _git_cd_repo {
     if [ -z "$GIT_REPO_DIR" ]; then
         echo "The GIT_REPO_DIR env var is not set!" >&2
+        return 1
     else
+        if [ ! -d "$GIT_REPO_DIR" ]; then
+            echo "The GIT_REPO_DIR \"$GIT_REPO_DIR\" does not exist!" >&2
+            return 1
+        fi
+
         if [ "$#" -eq "0" ]; then
             _git_repos=$(find "$GIT_REPO_DIR" -name .git)
             if [ -n "$_git_repos" ]; then
@@ -87,7 +95,7 @@ function _cd_git_repo {
 
 # git aliases
 alias ga="git add"
-alias gcd="_cd_git_repo"
+alias gcd="_git_cd_repo"
 alias gcanf="git commit --am --no-edit && git push -f"
 alias gbb="_git_backup_branch"
 alias gb="git branch -vv"
