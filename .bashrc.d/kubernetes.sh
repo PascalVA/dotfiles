@@ -10,6 +10,11 @@ function kc {
     fi
     kubeconfig_path="$KUBECONFIG_DIR"
 
+    if [ "$1" = "unset" ]; then
+        export KUBECONFIG=""
+        return 0
+    fi
+
     if [ -z "$1" ]; then
         cluster=$(ls "$kubeconfig_path" | fzf)
     else
