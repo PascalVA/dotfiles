@@ -120,7 +120,7 @@ function __prompt_command () {
         PS1_HOST_COLOR_EXPANDED=${!PS1_HOST_COLOR}
     fi
 
-    PS1="${PS1_HOST_COLOR_EXPANDED:-}\h${reset}$(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
+    PS1="${PS1_HOST_COLOR_EXPANDED:-}\h${reset}$(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n${__prompt_prefix:+"${__prompt_prefix}\\n"}($cexit)\$ "
 }
 
 # source git prompt if git is installed
@@ -176,8 +176,6 @@ alias l='ls -CF'
 alias ac='ansible-console'
 alias av='ansible-vault'
 alias ap='ansible-playbook'
-alias kn='kubens'
-alias kubeclt='kubectl'
 
 # source kubectl command aliases
 if [ -f "${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
