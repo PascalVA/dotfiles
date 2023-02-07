@@ -22,6 +22,7 @@ Plugin 'sheerun/vim-polyglot'            " language packs (Syntax Highlighting)
 Plugin 'vim-scripts/AutoComplPop'        " automatically complete while typing
 Plugin 'ntpeters/vim-better-whitespace'  " highlight trailing spaces
 Plugin 'fatih/vim-go'                    " golang integration
+Plugin 'diepm/vim-rest-console'
 
 " all of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -53,6 +54,9 @@ colorscheme onehalfdark
 
 " allow for easy pasting
 set paste
+
+" Show line and column numbers
+set ruler
 
 " use system clipboard when yanking
 set clipboard=unnamedplus
