@@ -4,6 +4,17 @@
 THIS_REAL_FILE=$(readlink -e ${BASH_SOURCE[0]})
 THIS_REAL_DIR=$(dirname ${THIS_REAL_FILE})
 
+
+# add local bashrc.d directory
+if [ ! -d "${HOME}/.bashrc.d" ]; then
+    mkdir ${HOME}/.bashrc.d
+fi
+
+# add local completions directory
+if [ ! -d "${HOME}/.bash_completion.d" ]; then
+    mkdir ${HOME}/.bash_completion.d
+fi
+
 # add vundle plugin manager
 if [ ! -d "${HOME}/.vim/bundle/Vundle.vim" ]; then
     git clone https://github.com/VundleVim/Vundle.vim.git ${HOME}/.vim/bundle/Vundle.vim
@@ -19,9 +30,9 @@ if [ ! -d "${HOME}/github/cykerway/complete-alias" ]; then
     git clone https://github.com/cykerway/complete-alias ${HOME}/github/cykerway/complete-alias
 fi
 
-# add bashrc custom dir
-if [ ! -d "${HOME}/.bashrc.d" ]; then
-    mkdir ${HOME}/.bashrc.d
+# install asdf
+if [ ! -d "${HOME}/.asdf" ]; then
+    git clone https://github.com/asdf-vm/asdf.git ${HOME}/.asdf --branch v0.11.2
 fi
 
 # symlink configuration files

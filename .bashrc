@@ -34,6 +34,12 @@ if [ -d  "${THIS_REAL_DIR}/.bashrc.d/" ]; then
     done
 fi
 
+# source asdf configurations
+if [ -d "${HOME}/.asdf" ]; then
+    source ${HOME}/.asdf/asdf.sh
+    source ${HOME}/.asdf/completions/asdf.bash
+fi
+
 # source bash_completion
 if [ -e /usr/share/bash-completion/bash_completion ]; then
     source /usr/share/bash-completion/bash_completion
