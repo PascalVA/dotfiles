@@ -159,8 +159,7 @@ shopt -s checkwinsize
 # ENVIRONMENT SETUP
 #
 
-export TERM=alacritty
-export EDITOR=vim
+export EDITOR=vi
 export KUBE_EDITOR=vim
 
 # no cows in my shell
