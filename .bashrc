@@ -188,7 +188,9 @@ if [ -f "${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
 fi
 
 # dockerized apps
-alias az='docker run --rm -ti --log-driver=none --user $UID --workdir=/workdir -v $(pwd):/workdir -v ~/.azure:/.azure mcr.microsoft.com/azure-cli az'
+if [ "$(which az 2>&1 > /dev/null; echo $?)" -eq "0" ]; then
+    alias az='docker run --rm -ti --log-driver=none --user $UID --workdir=/workdir -v $(pwd):/workdir -v ~/.azure:/.azure mcr.microsoft.com/azure-cli az'
+fi
 
 # fix mosh locale warnings for mosh
 alias mosh="LC_ALL=en_US.UTF-8 mosh"
