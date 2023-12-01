@@ -93,6 +93,11 @@ function _git_cd_repo {
     fi
 }
 
+# function to cd to the root of the current git repository
+function _git_cd_root {
+    cd $(git rev-parse --show-toplevel)
+}
+
 # git aliases
 alias ga="git add"
 alias gcd="_git_cd_repo"
@@ -115,3 +120,4 @@ alias gu="_git_update_branch"
 alias gwa="git worktree add"
 alias gwl="git worktree list"
 alias gwr="git worktree remove --force"
+alias ggr="_git_cd_root"
