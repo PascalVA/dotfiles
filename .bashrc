@@ -22,14 +22,14 @@ THIS_REAL_DIR=$(dirname ${THIS_REAL_FILE})
 
 # source local bashrc files
 if [ -d  "${HOME}/.bashrc.d/" ]; then
-    for bash_source in $(find ${HOME}/.bashrc.d/ -type f); do
+    for bash_source in $(find -L ${HOME}/.bashrc.d/ -type f); do
         source ${bash_source}
     done
 fi
 
 # source program specific source files from dotfiles
 if [ -d  "${THIS_REAL_DIR}/.bashrc.d/" ]; then
-    for bash_source in $(find ${THIS_REAL_DIR}/.bashrc.d/ -type f); do
+    for bash_source in $(find -L ${THIS_REAL_DIR}/.bashrc.d/ -type f); do
         source ${bash_source}
     done
 fi
@@ -47,7 +47,7 @@ fi
 
 # source custom bash completion dir
 if [ -d ~/.bash_completion.d ]; then
-    for comp_file in $(find ~/.bash_completion.d -type f); do
+    for comp_file in $(find -L ~/.bash_completion.d -type f); do
         . $comp_file
     done
 fi
