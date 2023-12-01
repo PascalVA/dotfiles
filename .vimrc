@@ -15,7 +15,9 @@ call vundle#begin()
 Plugin 'VundleVim/Vundle.vim'
 
 Plugin 'tpope/vim-fugitive'              " git
-Plugin 'kien/ctrlp.vim'                  " fuzzy finder
+if !has('nvim')
+  Plugin 'kien/ctrlp.vim'                  " fuzzy finder
+endif
 Plugin 'sainnhe/sonokai'                 " colorscheme
 Plugin 'sonph/onehalf', { 'rtp': 'vim' } " colorscheme
 Plugin 'sheerun/vim-polyglot'            " language packs (Syntax Highlighting)
