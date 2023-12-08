@@ -188,7 +188,7 @@ if [ -f "${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
 fi
 
 # dockerized apps
-if [ "$(which az 2>&1 > /dev/null; echo $?)" -eq "0" ]; then
+if [ "$(which az 2>&1 > /dev/null; echo $?)" -ne "0" ]; then
     alias az='docker run --rm -ti --log-driver=none --user $UID --workdir=/workdir -v $(pwd):/workdir -v ~/.azure:/.azure mcr.microsoft.com/azure-cli az'
 fi
 
