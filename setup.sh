@@ -50,4 +50,9 @@ ln -sf ${THIS_REAL_DIR}/.vimrc ${HOME}/.config/nvim/init.vim
 if [ ! -d "${HOME}/.config/alacritty" ]; then
     mkdir ${HOME}/.config/alacritty
 fi
-ln -sf ${THIS_REAL_DIR}/alacritty.yml ${HOME}/.config/alacritty/alacritty.yml
+
+# configure alacritty
+ln -sf ${THIS_REAL_DIR}/.config/alacritty/alacritty.config.toml ${HOME}/.config/alacritty/alacritty.config.toml
+ln -sf ${THIS_REAL_DIR}/.config/alacritty/alacritty.dark.toml ${HOME}/.config/alacritty/alacritty.dark.toml
+ln -sf ${THIS_REAL_DIR}/.config/alacritty/alacritty.light.toml ${HOME}/.config/alacritty/alacritty.light.toml
+cat ${HOME}/.config/alacritty/alacritty.config.toml ${HOME}/.config/alacritty/alacritty.dark.toml > ${HOME}/.config/alacritty/alacritty.toml
