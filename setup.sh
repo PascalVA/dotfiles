@@ -51,8 +51,32 @@ if [ ! -d "${HOME}/.config/alacritty" ]; then
     mkdir ${HOME}/.config/alacritty
 fi
 
+# add user bin dir
+mkdir ${HOME}/bin
+
+# copy and configure light-mode/dark-mode switcher
+ln -sf ${THIS_REAL_DIR}/bin/toggle-color-mode-gnome.sh ${HOME}/bin/toggle-color-mode-gnome.sh
+
 # configure alacritty
 ln -sf ${THIS_REAL_DIR}/.config/alacritty/alacritty.config.toml ${HOME}/.config/alacritty/alacritty.config.toml
 ln -sf ${THIS_REAL_DIR}/.config/alacritty/alacritty.dark.toml ${HOME}/.config/alacritty/alacritty.dark.toml
 ln -sf ${THIS_REAL_DIR}/.config/alacritty/alacritty.light.toml ${HOME}/.config/alacritty/alacritty.light.toml
 cat ${HOME}/.config/alacritty/alacritty.config.toml ${HOME}/.config/alacritty/alacritty.dark.toml > ${HOME}/.config/alacritty/alacritty.toml
+
+#
+# configure gnome custom shortcuts
+# (to read use: dconf dump /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/)
+#
+
+# create config keys to hold custom shortcuts
+gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/']"
+
+# alacrtitty (Super + Return)
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'terminal'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'env -u WAYLAND_DIPSLAY alacritty'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '<Super>Return'
+
+# toggle dark/light mode (Super + F11)
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'toggle-theme'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'toggle-color-mode-gnome.sh'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding '<Super>F11'
