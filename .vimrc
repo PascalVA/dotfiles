@@ -14,14 +14,19 @@ call vundle#begin()
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
 
-Plugin 'tpope/vim-fugitive'              " git
+"Plugin 'tpope/vim-fugitive'              " git
 if !has('nvim')
-  Plugin 'kien/ctrlp.vim'                  " fuzzy finder
+  Plugin 'kien/ctrlp.vim'                            " fuzzy finder
+else
+  Plugin 'nvim-lua/plenary.nvim'                     " Required for telescope
+  Plugin 'nvim-treesitter/nvim-treesitter'           " Required for telescope
+  Plugin 'nvim-telescope/telescope-fzf-native.nvim'  " Optional dependency of telescope
+  Plugin 'nvim-telescope/telescope.nvim'
 endif
-Plugin 'sainnhe/sonokai'                 " colorscheme
+
+Plugin 'preservim/nerdcommenter'
 Plugin 'sonph/onehalf', { 'rtp': 'vim' } " colorscheme
 Plugin 'sheerun/vim-polyglot'            " language packs (Syntax Highlighting)
-Plugin 'vim-scripts/AutoComplPop'        " automatically complete while typing
 Plugin 'ntpeters/vim-better-whitespace'  " highlight trailing spaces
 Plugin 'fatih/vim-go'                    " golang integration
 Plugin 'diepm/vim-rest-console'
@@ -43,12 +48,8 @@ filetype plugin indent on    " required To ignore plugin indent changes, instead
 "  set termguicolors
 "endif
 
-"let g:sonokai_style = 'andromeda'
-"let g:sonokai_enable_italic = 1          " italic causes bg color change in tmux
-"let g:sonokai_disable_italic_comment = 1  "
-"colorscheme sonokai
-
-colorscheme onehalfdark
+"colorscheme onehalfdark
+colorscheme onehalflight
 
 "
 " VIM SETTINGS
@@ -96,6 +97,10 @@ autocmd BufWritePost *.py :!flake8 %
 autocmd FileType python map <buffer> <F9> :w<CR>:exec '!python3' shellescape(@%, 1)<CR>
 autocmd FileType python imap <buffer> <F9> <esc>:w<CR>:exec '!python3' shellescape(@%, 1)<CR>
 
+" use F9 to run go files
+autocmd FileType go nmap <F9> <Plug>(go-run)
+autocmd FileType go nmap <C-A-R> <Plug>(go-run)
+
 "
 " NetRW (File Explorer)
 "
@@ -104,20 +109,29 @@ let g:netrw_banner = 0
 
 
 "
-" CODE SUGGESTION MENU
+" NAVIGATION
 "
 
-" Don't show menu when there is only one match
-set completeopt=menuone
+" create new window at the right when splitting
+set splitright
+" create new window at the bottom when splitting
+set splitbelow
 
-" Enter will no longer put a line break but just select the entry
-inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+" use escape to exit terminal mode
+tnoremap <C-[> <C-\><C-n>
 
-inoremap <expr> <C-n> pumvisible() ? '<C-n>' :
-  \ '<C-n><C-r>=pumvisible() ? "\<lt>Down>" : ""<CR>'
+" improve pane navigation
+tnoremap <C-M-h> <C-\><C-n><C-w>h
+tnoremap <C-M-j> <C-\><C-n><C-w>j
+tnoremap <C-M-k> <C-\><C-n><C-w>k
+tnoremap <C-M-l> <C-\><C-n><C-w>l
+nnoremap <C-M-h> <C-w>h
+nnoremap <C-M-j> <C-w>j
+nnoremap <C-M-k> <C-w>k
+nnoremap <C-M-l> <C-w>l
 
-inoremap <expr> <M-,> pumvisible() ? '<C-n>' :
-  \ '<C-x><C-o><C-n><C-p><C-r>=pumvisible() ? "\<lt>Down>" : ""<CR>'
+" automatically switch to input mode when going to terminal
+autocmd BufWinEnter,WinEnter * if &buftype == 'terminal' | silent! normal i | endif
 
 
 "
@@ -127,14 +141,23 @@ inoremap <expr> <M-,> pumvisible() ? '<C-n>' :
 " set custom leader key
 let mapleader = "\\"
 
-" normal mode pane navigation
-nnoremap <leader>h <C-w>h
-nnoremap <leader>j <C-w>j
-nnoremap <leader>k <C-w>k
-nnoremap <leader>l <C-w>l
-
-" ctrlp buffer pane
-nnoremap <leader>f :CtrlPBuffer<CR>
+" filefinder keybinds
+if !has('nvim')
+  nnoremap <leader>f :CtrlPBuffer<CR>
+else
+  nnoremap <leader>ff <cmd>Telescope find_files hidden=true<cr>
+  nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+  nnoremap <leader>fb <cmd>Telescope buffers<cr>
+  nnoremap <leader>fh <cmd>Telescope help_tags<cr>
+endif
 
 " open explore
 nnoremap <leader>e :Explore<CR>
+
+" buffers
+nnoremap <leader>n :bn<CR>
+nnoremap <leader>p :bp<CR>
+
+" improve page navigation
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
