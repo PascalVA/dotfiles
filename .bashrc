@@ -160,7 +160,7 @@ shopt -s checkwinsize
 #
 
 export EDITOR=vi
-export KUBE_EDITOR=vim
+export KUBE_EDITOR=vi
 
 # no cows in my shell
 export ANSIBLE_NOCOWS=1
@@ -181,6 +181,8 @@ alias l='ls -CF'
 alias ac='ansible-console'
 alias av='ansible-vault'
 alias ap='ansible-playbook'
+
+alias docuserver='docker run -ti --rm -v $(pwd)/:/usr/src/app/ --workdir /usr/src/app/ --network host --entrypoint bash node -c "npm install; npm run start"'
 
 # source kubectl command aliases
 if [ -f "${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
@@ -211,6 +213,13 @@ fi
 
 # allow for alias expansion with watch
 alias watch='watch '
+
+alias argocd='argocd --grpc-web'
+
+# kubernetes context switcher
+source <($HOME/bin/switcher init bash)
+alias s=switch
+complete -o default -F _switcher s
 
 # source alias completions
 if [ -f "${HOME}/github/cykerway/complete-alias/complete_alias" ]; then
