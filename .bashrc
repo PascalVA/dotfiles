@@ -143,7 +143,7 @@ PROMPT_COMMAND=__prompt_command
 # SHELL CONFIG
 #
 
-HISTCONTROL=ignoreboth  # don't log duplicate commands or commands starting with spaces
+HISTCONTROL=ignoreboth:erasedups  # don't log duplicate commands or commands starting with spaces
 HISTTIMEFORMAT="%d/%m/%y %T "
 HISTSIZE=-1
 HISTFILESIZE=-1

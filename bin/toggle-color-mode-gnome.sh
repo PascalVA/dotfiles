@@ -12,8 +12,10 @@ if [ "$color_scheme" == "'prefer-light'" ]; then
     echo "toggle dark"
     gsettings set org.gnome.desktop.interface color-scheme prefer-dark
     cat ~/.config/alacritty/alacritty.config.toml ~/.config/alacritty/alacritty.dark.toml > ~/.config/alacritty/alacritty.toml
+    sed -i 's/colorscheme onehalflight/colorscheme onehalfdark/' ~/.config/nvim/init.vim
 else
     echo "toggle light"
     gsettings set org.gnome.desktop.interface color-scheme prefer-light
     cat ~/.config/alacritty/alacritty.config.toml ~/.config/alacritty/alacritty.light.toml > ~/.config/alacritty/alacritty.toml
+    sed -i 's/colorscheme onehalfdark/colorscheme onehalflight/' ~/.config/nvim/init.vim
 fi
