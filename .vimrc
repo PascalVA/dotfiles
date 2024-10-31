@@ -21,6 +21,7 @@ else
   Plugin 'nvim-lua/plenary.nvim'                     " Required for telescope
   Plugin 'nvim-treesitter/nvim-treesitter'           " Required for telescope
   Plugin 'nvim-telescope/telescope-fzf-native.nvim'  " Optional dependency of telescope
+  Plugin 'nvim-telescope/telescope-file-browser.nvim'
   Plugin 'nvim-telescope/telescope.nvim'
 endif
 
@@ -48,7 +49,6 @@ filetype plugin indent on    " required To ignore plugin indent changes, instead
 "  set termguicolors
 "endif
 
-"colorscheme onehalfdark
 colorscheme onehalflight
 
 "
@@ -88,7 +88,7 @@ set nofixendofline  " don't fix end of line at the end of the file if it is miss
 syntax on  " enable syntax highlighting
 
 " remove trailing whitespace on file save
-autocmd BufWritePre * :%s/\s\+$//e
+autocmd BufWritePre *[^m][^d] :%s/\s\+$//e
 
 " run flake8 after writing python files
 autocmd BufWritePost *.py :!flake8 %
@@ -149,6 +149,7 @@ else
   nnoremap <leader>fg <cmd>Telescope live_grep<cr>
   nnoremap <leader>fb <cmd>Telescope buffers<cr>
   nnoremap <leader>fh <cmd>Telescope help_tags<cr>
+  nnoremap <leader>fe <cmd>Telescope file_browser<cr>
 endif
 
 " open explore
