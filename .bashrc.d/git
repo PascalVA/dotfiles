@@ -93,10 +93,42 @@ function _git_cd_repo {
     fi
 }
 
+function __git_switch {
+    git status >/dev/null # Make sure we are in a git repo
+    if [ "$?" -eq "128" ]; then
+        return
+    fi
+
+    local branches=$(git branch --format '%(refname:short)')
+    if [ -n "$(git branch --format '%(refname:short)' | tr -d '\n')" ]; then
+        git switch "$(git branch --format '%(refname:short)' | fzf)"
+    fi
+}
+
 # function to cd to the root of the current git repository
 function _git_cd_root {
     cd $(git rev-parse --show-toplevel)
 }
+
+# helper functions to make issue commits based on the branch name
+function _git_commit_issue () {
+    git status >/dev/null
+    if [ "$?" -eq "128" ]; then
+        return
+    fi
+
+    local issue=`expr "$(git symbolic-ref --short HEAD)" : '[A-Z]\+\-\([0-9]\+\)_.*'`
+    local type=${1:-CHANGE}
+    local message=$2
+
+    git commit -m "[TDW-${issue:-00000}] ${type}: ${message}"
+}
+
+alias gc-bugfix="_git_commit_issue BUGFIX "
+alias gc-change="_git_commit_issue CHANGE "
+alias gc-enhance="_git_commit_issue ENHANCEMENT "
+alias gc-feature="_git_commit_issue FEATURE "
+alias gc-fix="_git_commit_issue FIX "
 
 # git aliases
 alias ga="git add"
