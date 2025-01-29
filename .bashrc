@@ -55,6 +55,10 @@ if [ "$(which kubectl 2> /dev/null)" ]; then
     source <(kubectl completion bash)
 fi
 
+if [ "$(which argocd 2> /dev/null)" ]; then
+    source <(argocd completion bash)
+fi
+
 # handle alias completions
 if [ -d  "${THIS_REAL_DIR}/../../cykerway/complete-alias" ]; then
     source ${THIS_REAL_DIR}/../../cykerway/complete-alias/complete_alias
