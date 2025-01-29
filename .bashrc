@@ -34,12 +34,6 @@ if [ -d  "${THIS_REAL_DIR}/.bashrc.d/" ]; then
     done
 fi
 
-# source asdf configurations
-if [ -d "${HOME}/.asdf" ]; then
-    source ${HOME}/.asdf/asdf.sh
-    source ${HOME}/.asdf/completions/asdf.bash
-fi
-
 # source bash_completion
 if [ -e /usr/share/bash-completion/bash_completion ]; then
     source /usr/share/bash-completion/bash_completion
@@ -61,6 +55,10 @@ if [ "$(which kubectl 2> /dev/null)" ]; then
     source <(kubectl completion bash)
 fi
 
+# handle alias completions
+if [ -d  "${THIS_REAL_DIR}/../../cykerway/complete-alias" ]; then
+    source ${THIS_REAL_DIR}/../../cykerway/complete-alias/complete_alias
+fi
 
 #
 # HELPER FUNCTIONS
@@ -184,11 +182,6 @@ alias ap='ansible-playbook'
 
 alias docuserver='docker run -ti --rm -v $(pwd)/:/usr/src/app/ --workdir /usr/src/app/ --network host --entrypoint bash node -c "npm install; npm run start"'
 
-# source kubectl command aliases
-if [ -f "${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
-    source ${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases
-fi
-
 # dockerized apps
 if [ "$(which az 2>&1 > /dev/null; echo $?)" -ne "0" ]; then
     alias az='docker run --rm -ti --log-driver=none --user $UID --workdir=/workdir -v $(pwd):/workdir -v ~/.azure:/.azure mcr.microsoft.com/azure-cli az'
@@ -225,3 +218,12 @@ complete -o default -F _switcher s
 if [ -f "${HOME}/github/cykerway/complete-alias/complete_alias" ]; then
     source ${HOME}/github/cykerway/complete-alias/complete_alias
 fi
+
+# source kubectl command aliases
+if [ -f "${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
+    source ${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases
+    for complete_alias in $(sed '/^alias /!d;s/^alias //;s/=.*$//' ${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases); do
+        complete -F _complete_alias "$complete_alias"
+    done
+fi
+

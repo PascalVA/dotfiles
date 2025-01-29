@@ -55,3 +55,4 @@ alias kubeclt="kubectl"
 alias kx="kubectx"
 # get namespaces is required because kubens does not support OIDC at the moment
 alias kn='kubectl get namespaces 2>&1 > /dev/null; kubens'
+alias ku='export KUBECONFIG=""'
