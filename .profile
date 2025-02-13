@@ -41,9 +41,13 @@ if [ -d "$HOME/.local/go/bin" ] ; then
     PATH="$HOME/.local/go/bin:$PATH"
 fi
 
+# add cargo bin
+if [ -d "$HOME/.local/go/bin" ]; then
+    PATH="$PATH:$HOME/.cargo/bin"
+fi
+
 # source asdf configurations
 if [ -d "${HOME}/.asdf" ]; then
     source ${HOME}/.asdf/asdf.sh
     source ${HOME}/.asdf/completions/asdf.bash
 fi
-
