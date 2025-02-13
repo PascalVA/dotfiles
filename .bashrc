@@ -80,18 +80,22 @@ function __kube_ps1 () {
         _kube_ps1_namespace=$(kubectl config view --minify --output 'jsonpath={..namespace}')
         _kube_ps1_namespace=${_kube_ps1_namespace:-default}
 
-        echo " 🔧 [$_kube_ps1_cluster:$_kube_ps1_namespace]"
+        echo "📡 $_kube_ps1_cluster:$_kube_ps1_namespace "
     fi
 }
 
 # prints python virtual_env infromation if defined
 function __venv_ps1 () {
-    echo ${virtual_env:+" 🚀 $virtual_env"}
+    if [ "$virtual_env" = "master" ]; then
+        echo "🚀 "
+    else
+        echo ${virtual_env:+"🚀 $virtual_env "}
+    fi
 }
 
 # prints the current and parent directory of the pwd
 function __pwd_ps1 () {
-    echo " [${PWD#"${PWD%/*/*}/"}]"
+    echo "${PWD#"${PWD%/*/*}/"}"
 }
 
 # setup dynamic prompt command
@@ -116,7 +120,7 @@ function __prompt_command () {
 
     local git_ps1=""
     if [ "$(type __git_ps1 2> /dev/null)" ]; then
-         local git_ps1=$(__git_ps1 '(%s)')
+         local git_ps1=$(__git_ps1 '%s')
     fi
 
     local cexit=$exitcode
@@ -124,11 +128,7 @@ function __prompt_command () {
         local cexit="${lred}$exitcode${reset}"
     fi
 
-    if [ -n "$PS1_HOST_COLOR" ]; then
-        PS1_HOST_COLOR_EXPANDED=${!PS1_HOST_COLOR}
-    fi
-
-    PS1="${PS1_HOST_COLOR_EXPANDED:-}\h${reset}$(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
+    PS1="[\h] $(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
 }
 
 # source git prompt if git is installed
