@@ -42,7 +42,7 @@ done
 
 # symlink the nvim config file
 if [ ! -d "${HOME}/.config/nvim" ]; then
-     ${HOME}/.config/nvim
+     mkdir -p ${HOME}/.config/nvim
 fi
 ln -sf ${THIS_REAL_DIR}/.vimrc ${HOME}/.config/nvim/init.vim
 
