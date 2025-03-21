@@ -214,9 +214,12 @@ alias watch='watch '
 alias argocd='argocd --grpc-web'
 
 # kubernetes context switcher
-source <($HOME/bin/switcher init bash)
-alias s=switch
-complete -o default -F _switcher s
+SWITCHER_EXECUTABLE=$(which switcher 2> /dev/null)
+if [ "$SWITCHER_EXECUTABLE" ]; then
+    source <($SWITCHER_EXECUTABLE init bash)
+    alias s=switch
+    complete -o default -F _switcher s
+fi
 
 # source alias completions
 if [ -f "${HOME}/github.com/cykerway/complete-alias/complete_alias" ]; then
