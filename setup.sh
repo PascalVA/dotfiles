@@ -21,13 +21,13 @@ if [ ! -d "${HOME}/.vim/bundle/Vundle.vim" ]; then
 fi
 
 # install kubectl aliasses
-if [ ! -d "${HOME}/github/ahmetb/kubectl-aliases" ]; then
-    git clone https://github.com/ahmetb/kubectl-aliases ${HOME}/github/ahmetb/kubectl-aliases
+if [ ! -d "${HOME}/github.com/ahmetb/kubectl-aliases" ]; then
+    git clone https://github.com/ahmetb/kubectl-aliases ${HOME}/github.com/ahmetb/kubectl-aliases
 fi
 
 # install alias completions
-if [ ! -d "${HOME}/github/cykerway/complete-alias" ]; then
-    git clone https://github.com/cykerway/complete-alias ${HOME}/github/cykerway/complete-alias
+if [ ! -d "${HOME}/github.com/cykerway/complete-alias" ]; then
+    git clone https://github.com/cykerway/complete-alias ${HOME}/github.com/cykerway/complete-alias
 fi
 
 # install asdf

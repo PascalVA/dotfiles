@@ -219,14 +219,14 @@ alias s=switch
 complete -o default -F _switcher s
 
 # source alias completions
-if [ -f "${HOME}/github/cykerway/complete-alias/complete_alias" ]; then
-    source ${HOME}/github/cykerway/complete-alias/complete_alias
+if [ -f "${HOME}/github.com/cykerway/complete-alias/complete_alias" ]; then
+    source ${HOME}/github.com/cykerway/complete-alias/complete_alias
 fi
 
 # source kubectl command aliases
-if [ -f "${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
-    source ${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases
-    for complete_alias in $(sed '/^alias /!d;s/^alias //;s/=.*$//' ${HOME}/github/ahmetb/kubectl-aliases/.kubectl_aliases); do
+if [ -f "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
+    source ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases
+    for complete_alias in $(sed '/^alias /!d;s/^alias //;s/=.*$//' ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases); do
         complete -F _complete_alias "$complete_alias"
     done
 fi
