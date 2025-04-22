@@ -14,7 +14,8 @@ if [ "$color_scheme" = "'prefer-light'" ]; then
    for nvim_server in $(ls /run/user/1000/nvim.*); do
        nvim --server "$nvim_server" --remote-send ":colorscheme onehalfdark<CR>"
    done
-   sed -i 's/colorscheme onehalflight/colorscheme onehalfdark/' ~/.config/nvim/init.vim
+   sed -i 's/\(colorscheme =\) "[^"]\+"/\1 "onehalfdark"/' ~/.config/nvim/lua/plugins/colorscheme.lua
+   sed -i 's/\(theme\) .*/\1 "iceberg-dark"/' ~/.config/zellij/config.kdl
 else
    echo "toggle light"
    gsettings set org.gnome.desktop.interface color-scheme prefer-light
@@ -22,5 +23,6 @@ else
    for nvim_server in $(ls /run/user/1000/nvim.*); do
        nvim --server "$nvim_server" --remote-send ":colorscheme onehalflight<CR>"
    done
-   sed -i 's/colorscheme onehalfdark/colorscheme onehalflight/' ~/.config/nvim/init.vim
+   sed -i 's/\(colorscheme =\) "[^"]\+"/\1 "onehalflight"/' ~/.config/nvim/lua/plugins/colorscheme.lua
+   sed -i 's/\(theme\) .*/\1 "catppuccin-latte"/' ~/.config/zellij/config.kdl
 fi
