@@ -46,8 +46,9 @@ if [ -d "$HOME/.local/go/bin" ]; then
     PATH="$PATH:$HOME/.cargo/bin"
 fi
 
-# source asdf configurations
+# load asdf
 if [ -d "${HOME}/.asdf" ]; then
-    source ${HOME}/.asdf/asdf.sh
-    source ${HOME}/.asdf/completions/asdf.bash
+    PATH="$HOME/.asdf/bin:$PATH"
+    export ASDF_DATA_DIR="${HOME}/.asdf"
+    export PATH="$ASDF_DATA_DIR/shims:$PATH"
 fi
