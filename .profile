@@ -10,45 +10,45 @@
 
 # if running bash
 if [ -n "$BASH_VERSION" ]; then
-    # include .bashrc if it exists
-    if [ -f "$HOME/.bashrc" ]; then
-	. "$HOME/.bashrc"
-    fi
+  # include .bashrc if it exists
+  if [ -f "$HOME/.bashrc" ]; then
+    . "$HOME/.bashrc"
+  fi
 fi
 
 # set PATH so it includes user's private bin if it exists
-if [ -d "$HOME/bin" ] ; then
-    PATH="$HOME/bin:$PATH"
+if [ -d "$HOME/bin" ]; then
+  PATH="$HOME/bin:$PATH"
 fi
 
 # set PATH so it includes user's private bin if it exists
-if [ -d "$HOME/.local/bin" ] ; then
-    PATH="$HOME/.local/bin:$PATH"
+if [ -d "$HOME/.local/bin" ]; then
+  PATH="$HOME/.local/bin:$PATH"
 fi
 
 # set PATH so it includes the golang installation if it exists
-if [ -d "/usr/local/go/bin" ] ; then
-    PATH="/usr/local/go/bin:$PATH"
+if [ -d "/usr/local/go/bin" ]; then
+  PATH="/usr/local/go/bin:$PATH"
 fi
 
 # set PATH so it includes user's private go bin if it exists
-if [ -d "$HOME/go/bin" ] ; then
-    PATH="$HOME/go/bin:$PATH"
+if [ -d "$HOME/go/bin" ]; then
+  PATH="$HOME/go/bin:$PATH"
 fi
 
 # set PATH so it includes user's private local go bin if it exists
-if [ -d "$HOME/.local/go/bin" ] ; then
-    PATH="$HOME/.local/go/bin:$PATH"
+if [ -d "$HOME/.local/go/bin" ]; then
+  PATH="$HOME/.local/go/bin:$PATH"
 fi
 
 # add cargo bin
-if [ -d "$HOME/.local/go/bin" ]; then
-    PATH="$PATH:$HOME/.cargo/bin"
+if [ -d "$HOME/.cargo/bin" ]; then
+  PATH="$PATH:$HOME/.cargo/bin"
 fi
 
 # load asdf
 if [ -d "${HOME}/.asdf" ]; then
-    PATH="$HOME/.asdf/bin:$PATH"
-    export ASDF_DATA_DIR="${HOME}/.asdf"
-    export PATH="$ASDF_DATA_DIR/shims:$PATH"
+  PATH="$HOME/.asdf/bin:$PATH"
+  export ASDF_DATA_DIR="${HOME}/.asdf"
+  export PATH="$ASDF_DATA_DIR/shims:$PATH"
 fi
