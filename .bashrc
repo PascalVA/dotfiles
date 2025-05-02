@@ -21,47 +21,42 @@ THIS_REAL_DIR=$(dirname ${THIS_REAL_FILE})
 #
 
 # source local bashrc files
-if [ -d  "${HOME}/.bashrc.d/" ]; then
-    for bash_source in $(find -L ${HOME}/.bashrc.d/ -type f); do
-        source ${bash_source}
-    done
+if [ -d "${HOME}/.bashrc.d/" ]; then
+  for bash_source in $(find -L ${HOME}/.bashrc.d/ -type f); do
+    source ${bash_source}
+  done
 fi
 
 # source program specific source files from dotfiles
-if [ -d  "${THIS_REAL_DIR}/.bashrc.d/" ]; then
-    for bash_source in $(find -L ${THIS_REAL_DIR}/.bashrc.d/ -type f); do
-        source ${bash_source}
-    done
+if [ -d "${THIS_REAL_DIR}/.bashrc.d/" ]; then
+  for bash_source in $(find -L ${THIS_REAL_DIR}/.bashrc.d/ -type f); do
+    source ${bash_source}
+  done
 fi
 
 # source bash_completion
 if [ -e /usr/share/bash-completion/bash_completion ]; then
-    source /usr/share/bash-completion/bash_completion
+  source /usr/share/bash-completion/bash_completion
 fi
 
 # source custom bash completion dir
 if [ -d ~/.bash_completion.d ]; then
-    for comp_file in $(find -L ~/.bash_completion.d -type f); do
-        . $comp_file
-    done
+  for comp_file in $(find -L ~/.bash_completion.d -type f); do
+    . $comp_file
+  done
 fi
 
 # source command completions
-if [ "$(which kind 2> /dev/null)" ]; then
-    source <(kind completion bash)
+if [ "$(which kind 2>/dev/null)" ]; then
+  source <(kind completion bash)
 fi
 
-if [ "$(which kubectl 2> /dev/null)" ]; then
-    source <(kubectl completion bash)
+if [ "$(which kubectl 2>/dev/null)" ]; then
+  source <(kubectl completion bash)
 fi
 
-if [ "$(which argocd 2> /dev/null)" ]; then
-    source <(argocd completion bash)
-fi
-
-# handle alias completions
-if [ -d  "${THIS_REAL_DIR}/../../cykerway/complete-alias" ]; then
-    source ${THIS_REAL_DIR}/../../cykerway/complete-alias/complete_alias
+if [ "$(which argocd 2>/dev/null)" ]; then
+  source <(argocd completion bash)
 fi
 
 #
@@ -73,79 +68,78 @@ fi
 #
 
 # displays kubernetes cluster and namespace if a kubectl context is find
-function __kube_ps1 () {
-    kubectl config view --minify > /dev/null 2> /dev/null
-    if [ "$?" == "0" ]; then
-        _kube_ps1_cluster=$(kubectl config view --minify --output 'jsonpath={.contexts[].context.cluster}')
-        _kube_ps1_namespace=$(kubectl config view --minify --output 'jsonpath={..namespace}')
-        _kube_ps1_namespace=${_kube_ps1_namespace:-default}
+function __kube_ps1() {
+  kubectl config view --minify >/dev/null 2>/dev/null
+  if [ "$?" == "0" ]; then
+    _kube_ps1_cluster=$(kubectl config view --minify --output 'jsonpath={.contexts[].context.cluster}')
+    _kube_ps1_namespace=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+    _kube_ps1_namespace=${_kube_ps1_namespace:-default}
 
-        echo "📡 $_kube_ps1_cluster:$_kube_ps1_namespace "
-    fi
+    echo "📡 $_kube_ps1_cluster:$_kube_ps1_namespace "
+  fi
 }
 
 # prints python virtual_env infromation if defined
-function __venv_ps1 () {
-    if [ "$virtual_env" = "master" ]; then
-        echo "🚀 "
-    else
-        echo ${virtual_env:+"🚀 $virtual_env "}
-    fi
+function __venv_ps1() {
+  if [ "$virtual_env" = "master" ]; then
+    echo "🚀 "
+  else
+    echo ${virtual_env:+"🚀 $virtual_env "}
+  fi
 }
 
 # prints the current and parent directory of the pwd
-function __pwd_ps1 () {
-    echo "${PWD#"${PWD%/*/*}/"}"
+function __pwd_ps1() {
+  echo "${PWD#"${PWD%/*/*}/"}"
 }
 
 # setup dynamic prompt command
-function __prompt_command () {
-    local exitcode=$?
-    local virtual_env=$(basename ${VIRTUAL_ENV:-""})
-    local black="\[\e[00;90m\]"
-    local lgrey="\[\e[00;37m\]"
-    local lred="\[\e[00;31m\]"
-    local red="\[\e[00;91m\]"
-    local lgreen="\[\e[00;32m\]"
-    local green="\[\e[00;92m\]"
-    local lyellow="\[\e[00;33m\]"
-    local yellow="\[\e[00;93m\]"
-    local lblue="\[\e[00;34m\]"
-    local blue="\[\e[00;94m\]"
-    local lpurple="\[\e[00;35m\]"
-    local purple="\[\e[00;95m\]"
-    local lcyan="\[\e[00;36m\]"
-    local cyan="\[\e[00;96m\]"
-    local reset="\[\e[0m\]"
+function __prompt_command() {
+  local exitcode=$?
+  local virtual_env=$(basename ${VIRTUAL_ENV:-""})
+  local black="\[\e[00;90m\]"
+  local lgrey="\[\e[00;37m\]"
+  local lred="\[\e[00;31m\]"
+  local red="\[\e[00;91m\]"
+  local lgreen="\[\e[00;32m\]"
+  local green="\[\e[00;92m\]"
+  local lyellow="\[\e[00;33m\]"
+  local yellow="\[\e[00;93m\]"
+  local lblue="\[\e[00;34m\]"
+  local blue="\[\e[00;94m\]"
+  local lpurple="\[\e[00;35m\]"
+  local purple="\[\e[00;95m\]"
+  local lcyan="\[\e[00;36m\]"
+  local cyan="\[\e[00;96m\]"
+  local reset="\[\e[0m\]"
 
-    local git_ps1=""
-    if [ "$(type __git_ps1 2> /dev/null)" ]; then
-         local git_ps1=$(__git_ps1 '%s')
-    fi
+  local git_ps1=""
+  if [ "$(type __git_ps1 2>/dev/null)" ]; then
+    local git_ps1=$(__git_ps1 '%s')
+  fi
 
-    local cexit=$exitcode
-    if [ "$exitcode" -ne "0" ]; then
-        local cexit="${lred}$exitcode${reset}"
-    fi
+  local cexit=$exitcode
+  if [ "$exitcode" -ne "0" ]; then
+    local cexit="${lred}$exitcode${reset}"
+  fi
 
-    PS1="[\h] $(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
+  PS1="[\h] $(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
 }
 
 # source git prompt if git is installed
 if [ -e /usr/share/git/git-prompt.sh ]; then
-    . /usr/share/git/git-prompt.sh
+  . /usr/share/git/git-prompt.sh
 elif [ /usr/lib/git-core/git-sh-prompt ]; then
-    . /usr/lib/git-core/git-sh-prompt
+  . /usr/lib/git-core/git-sh-prompt
 fi
 
 PROMPT_COMMAND=__prompt_command
-
 
 #
 # SHELL CONFIG
 #
 
-HISTCONTROL=ignoreboth:erasedups  # don't log duplicate commands or commands starting with spaces
+HISTCONTROL=ignoreboth:erasedups # don't log duplicate commands or commands starting with spaces
 HISTTIMEFORMAT="%d/%m/%y %T "
 HISTSIZE=-1
 HISTFILESIZE=-1
@@ -173,64 +167,33 @@ export FZF_DEFAULT_OPTS="--layout=reverse"
 # add compose key
 export XKB_DEFAULT_OPTIONS=compose:ralt
 
-#
-# ALIASES
-#
-alias ls='LC_COLLATE=C ls --color -h --group-directories-first --sort=extension'
-alias la='ls -a'
-alias ll='ls -alF'
-alias l='ls -CF'
-alias ac='ansible-console'
-alias av='ansible-vault'
-alias ap='ansible-playbook'
-
-alias docuserver='docker run -ti --rm -v $(pwd)/:/usr/src/app/ --workdir /usr/src/app/ --network host --entrypoint bash node -c "npm install; npm run start"'
-
-# dockerized apps
-if [ "$(which az 2>&1 > /dev/null; echo $?)" -ne "0" ]; then
-    alias az='docker run --rm -ti --log-driver=none --user $UID --workdir=/workdir -v $(pwd):/workdir -v ~/.azure:/.azure mcr.microsoft.com/azure-cli az'
-fi
-
-# fix mosh locale warnings for mosh
-alias mosh="LC_ALL=en_US.UTF-8 mosh"
-
-# allow alias expansion with watch command
-alias watch='watch '
-
-# use vim if installed
-if [ "$(which vim 2> /dev/null)" ]; then
-    alias vi=vim
-fi
-
-# use nvim if installed
-if [ "$(which nvim 2> /dev/null)" ]; then
-    alias vi=nvim
-    alias vim=nvim
-fi
-
-# allow for alias expansion with watch
-alias watch='watch '
-
-alias argocd='argocd --grpc-web'
-
 # kubernetes context switcher
-SWITCHER_EXECUTABLE=$(which switcher 2> /dev/null)
+SWITCHER_EXECUTABLE=$(which switcher 2>/dev/null)
 if [ "$SWITCHER_EXECUTABLE" ]; then
-    source <($SWITCHER_EXECUTABLE init bash)
-    alias s=switch
-    complete -o default -F _switcher s
+  source <($SWITCHER_EXECUTABLE init bash)
+  alias s=switch
+  complete -o default -F _switcher s
 fi
 
 # source alias completions
 if [ -f "${HOME}/github.com/cykerway/complete-alias/complete_alias" ]; then
-    source ${HOME}/github.com/cykerway/complete-alias/complete_alias
+  source ${HOME}/github.com/cykerway/complete-alias/complete_alias
 fi
 
 # source kubectl command aliases
 if [ -f "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
-    source ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases
-    for complete_alias in $(sed '/^alias /!d;s/^alias //;s/=.*$//' ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases); do
-        complete -F _complete_alias "$complete_alias"
-    done
+  source ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases
+  for complete_alias in $(sed '/^alias /!d;s/^alias //;s/=.*$//' ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases); do
+    complete -F _complete_alias "$complete_alias"
+  done
 fi
 
+# handle alias completions
+if [ -d "${THIS_REAL_DIR}/../../cykerway/complete-alias" ]; then
+  source ${THIS_REAL_DIR}/../../cykerway/complete-alias/complete_alias
+fi
+
+eval "$(direnv hook bash)"
+
+# source aliasses
+source ${THIS_REAL_DIR}/.aliasses
