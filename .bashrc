@@ -175,6 +175,11 @@ if [ "$SWITCHER_EXECUTABLE" ]; then
   complete -o default -F _switcher s
 fi
 
+# source fzf shortcuts
+if [ -f "/usr/share/doc/fzf/examples/key-bindings.bash" ]; then
+  source "/usr/share/doc/fzf/examples/key-bindings.bash"
+fi
+
 # source alias completions
 if [ -f "${HOME}/github.com/cykerway/complete-alias/complete_alias" ]; then
   source ${HOME}/github.com/cykerway/complete-alias/complete_alias
