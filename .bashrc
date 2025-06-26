@@ -123,6 +123,11 @@ function __prompt_command() {
     local cexit="${lred}$exitcode${reset}"
   fi
 
+  # save/recall history during every prompt
+  history -a
+  history -n
+
+  # export set prompt
   PS1="[\h] $(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
 }
 
