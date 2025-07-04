@@ -185,20 +185,15 @@ if [ -f "/usr/share/doc/fzf/examples/key-bindings.bash" ]; then
   source "/usr/share/doc/fzf/examples/key-bindings.bash"
 fi
 
-# source alias completions
-if [ -f "${HOME}/github.com/cykerway/complete-alias/complete_alias" ]; then
-  source ${HOME}/github.com/cykerway/complete-alias/complete_alias
-fi
-
 # source kubectl command aliases
-if [ -f "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
-  source ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases
+if [ -f "${THIS_REAL_DIR}/../../github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
+  source "${THIS_REAL_DIR}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases"
   for complete_alias in $(sed '/^alias /!d;s/^alias //;s/=.*$//' ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases); do
     complete -F _complete_alias "$complete_alias"
   done
 fi
 
-# handle alias completions
+# source alias completions
 if [ -d "${THIS_REAL_DIR}/../../cykerway/complete-alias" ]; then
   source ${THIS_REAL_DIR}/../../cykerway/complete-alias/complete_alias
 fi
@@ -206,5 +201,4 @@ fi
 eval "$(direnv hook bash)"
 
 # source aliasses
-source ${THIS_REAL_DIR}/.aliasses
 source "$HOME/.cargo/env"

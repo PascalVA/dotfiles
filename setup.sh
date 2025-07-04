@@ -8,14 +8,12 @@ GOLANG_VERSION=1.24.4
 
 SETUP_TARGET=$1
 case $SETUP_TARGET in
-  server)
-    ;;
-  desktop)
-    ;;
-  *)
-    echo "Usage: ./setup.sh (server|desktop)"
-    exit 1
-    ;;
+server) ;;
+desktop) ;;
+*)
+  echo "Usage: ./setup.sh (server|desktop)"
+  exit 1
+  ;;
 esac
 
 # install custom packages
@@ -29,7 +27,7 @@ sudo apt update && sudo apt install -y \
   libfuse2 \
   pkg-config \
   python-is-python3 \
-  python3-virtualenv \
+  python3-venv \
   ranger \
   ripgrep \
   tree \
@@ -37,7 +35,8 @@ sudo apt update && sudo apt install -y \
 
 # create custom directories in the user home directory
 mkdir -p ${HOME}/.local/share/{fonts,icons}
-mkdir -p ${HOME}/{.bashrc.d,.bash_completion.d}
+ln -sf ${SCRIPT_DIR}/.bashrc.d/ ${HOME}/.bashrc.d/
+ln -sf ${SCRIPT_DIR}/.bash_completion.d/ ${HOME}/.bash_completion.d/
 
 # install nerd fonts
 
@@ -84,7 +83,6 @@ done
 
 # configure global gitignore
 git config --global core.excludesFile '~/.gitignore'
-
 
 # Install and configure GUI features only on desktops
 if [ "$SETUP_TARGET" == "desktop" ]; then

@@ -15,15 +15,12 @@ alias ll='ls -alF'
 alias ls='LC_COLLATE=C ls --color -h --group-directories-first --sort=extension'
 alias z="zellij"
 
-# use vim if installed
-if [ "$(which vim 2>/dev/null)" ]; then
-  alias vi=vim
-fi
-
-# use nvim if installed
-if [ "$(which nvim 2>/dev/null)" ]; then
+# vim, nvim config
+if [ "$(/usr/bin/which nvim)" ]; then
   alias vi=nvim
   alias vim=nvim
+elif [ "$(/usr/bin/which nvim)" ]; then
+  alias vi=vim
 fi
 
 # allow for alias expansion with watch
@@ -51,4 +48,3 @@ if [ "$(
 fi
 
 alias hugo='docker run -ti --rm --network host --log-driver none -p 1313:1313 -v $(pwd):/content/ hugo:latest hugo'
-
