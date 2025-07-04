@@ -4,9 +4,22 @@
 # can use it for symlinking files later
 SCRIPT_DIR=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
 
+GOLANG_VERSION=1.24.4
+
+SETUP_TARGET=$1
+case $SETUP_TARGET in
+  server)
+    ;;
+  desktop)
+    ;;
+  *)
+    echo "Usage: ./setup.sh (server|desktop)"
+    exit 1
+    ;;
+esac
+
 # install custom packages
-sudo apt update
-sudo apt install -y \
+sudo apt update && sudo apt install -y \
   build-essential \
   direnv \
   fd-find \
@@ -15,22 +28,24 @@ sudo apt install -y \
   libfontconfig-dev \
   libfuse2 \
   pkg-config \
+  python-is-python3 \
+  python3-virtualenv \
   ranger \
   ripgrep \
   tree \
-  unzip \
-  wl-clipboard \
-  xclip
+  unzip
 
 # create custom directories in the user home directory
-mkdir -p ${HOME}/{.bashrc.d,.bash_completion.d}
-mkdir -p ${HOME}/.config/{alacritty,nvim}
 mkdir -p ${HOME}/.local/share/{fonts,icons}
+mkdir -p ${HOME}/{.bashrc.d,.bash_completion.d}
 
 # install nerd fonts
-curl -LO https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Noto.zip
-unzip -d ${HOME}/.local/share/fonts Noto.zip
-rm Noto.zip
+
+if [ ! "${HOME}/.local/share/fonts/NotoMonoNerdFont-Regular.ttf" ]; then
+  curl -LO https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Noto.zip
+  unzip -d ${HOME}/.local/share/fonts Noto.zip
+  rm Noto.zip
+fi
 
 # install kubectl aliasses
 if [ ! -d "${HOME}/github.com/ahmetb/kubectl-aliases" ]; then
@@ -42,51 +57,66 @@ if [ ! -d "${HOME}/github.com/cykerway/complete-alias" ]; then
   git clone https://github.com/cykerway/complete-alias ${HOME}/github.com/cykerway/complete-alias
 fi
 
-# install lazyvim
-if [ ! -d "${HOME}/.config/nvim/lua" ]; then
-  git clone https://github.com/LazyVim/starter ${HOME}/.config/nvim
-  rm -rf ${HOME}/.config/nvim/.git
-fi
-
 # install rust and cargo
 if [ ! -d "${HOME}/.cargo" ]; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 fi
 
-# install cargo apps
-cargo install alacritty
-cargo install zellij
+# install and configure zellij
+if [ ! "$(which zellij)" ]; then
+  cargo install zellij
+  ln -sf ${SCRIPT_DIR}/.config/zellij/config.kdl ${HOME}/.config/zellij/config.kdl
+  ln -sf ${SCRIPT_DIR}/.config/zellij/config.kdl ${HOME}/.config/zellij/workspace-layout.kdl
+fi
+
+# install golang
+if [ ! "$(which go)" ]; then
+  curl -Lo - https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz | sudo tar -C /usr/local/bin/ -xzf -
+fi
 
 # install azure-cli
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
 # symlink configuration files
-for _filename in .aliasses .bashrc .inputrc .profile .gitignore; do
+for _filename in .aliasses .bashrc .inputrc .profile .gitignore .config/nvim; do
   ln -sf "${SCRIPT_DIR}/$_filename" "${HOME}/$_filename"
 done
-
-# copy and configure light-mode/dark-mode switcher
-ln -sf ${SCRIPT_DIR}/.local/bin/toggle-color-mode-gnome.sh ${HOME}/.local/bin/toggle-color-mode-gnome.sh
-
-# configure alacritty
-ln -sf ${SCRIPT_DIR}/.config/alacritty/alacritty.config.toml ${HOME}/.config/alacritty/alacritty.config.toml
-ln -sf ${SCRIPT_DIR}/.config/alacritty/alacritty.dark.toml ${HOME}/.config/alacritty/alacritty.dark.toml
-ln -sf ${SCRIPT_DIR}/.config/alacritty/alacritty.light.toml ${HOME}/.config/alacritty/alacritty.light.toml
-cat ${HOME}/.config/alacritty/alacritty.config.toml ${HOME}/.config/alacritty/alacritty.dark.toml >${HOME}/.config/alacritty/alacritty.toml
-
-# configure zellij
-ln -sf ${SCRIPT_DIR}/.config/zellij/config.kdl ${HOME}/.config/zellij/config.kdl
-ln -sf ${SCRIPT_DIR}/.config/zellij/config.kdl ${HOME}/.config/zellij/workspace-layout.kdl
 
 # configure global gitignore
 git config --global core.excludesFile '~/.gitignore'
 
-#
-# configure gnome custom shortcuts
-# (to read use: dconf dump /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/)
-#
 
-if [ -n "${DISPLAY}" ]; then
+# Install and configure GUI features only on desktops
+if [ "$SETUP_TARGET" == "desktop" ]; then
+
+  echo "DESKTOP SETUP"
+  exit 0
+
+  # copy and configure light-mode/dark-mode switcher
+  ln -sf ${SCRIPT_DIR}/.local/bin/toggle-color-mode-gnome.sh ${HOME}/.local/bin/toggle-color-mode-gnome.sh
+
+  # install wl-clipboard tools
+  sudo apt install -y \
+    wl-clipboard \
+    xclip
+
+  # install alacritty terminal emulator
+  if [ -n "${DISPLAY}" ]; then
+    cargo install alacritty
+  fi
+
+  # configure alacritty
+  mkdir -p ${HOME}/.config/alacritty
+  ln -sf ${SCRIPT_DIR}/.config/alacritty/alacritty.config.toml ${HOME}/.config/alacritty/alacritty.config.toml
+  ln -sf ${SCRIPT_DIR}/.config/alacritty/alacritty.dark.toml ${HOME}/.config/alacritty/alacritty.dark.toml
+  ln -sf ${SCRIPT_DIR}/.config/alacritty/alacritty.light.toml ${HOME}/.config/alacritty/alacritty.light.toml
+  cat ${HOME}/.config/alacritty/alacritty.config.toml ${HOME}/.config/alacritty/alacritty.dark.toml >${HOME}/.config/alacritty/alacritty.toml
+
+  #
+  # configure gnome custom shortcuts
+  # (to read use: dconf dump /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/)
+  #
+
   # create config keys to hold custom shortcuts
   gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/']"
 

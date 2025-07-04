@@ -207,3 +207,4 @@ eval "$(direnv hook bash)"
 
 # source aliasses
 source ${THIS_REAL_DIR}/.aliasses
+source "$HOME/.cargo/env"
