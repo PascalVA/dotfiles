@@ -3,25 +3,24 @@
 # store the parent directory path of this script so we
 # can use it for symlinking files later
 SCRIPT_DIR=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
-
+FZF_VERSION=$(basename $(curl -Ls -o /dev/null -w %{url_effective} https://github.com/junegunn/fzf/releases/latest | tr -d v))
 GOLANG_VERSION=1.24.4
-
 SETUP_TARGET=$1
+
 case $SETUP_TARGET in
 server) ;;
 desktop) ;;
 *)
-  echo "Usage: ./setup.sh (server|desktop)"
+  echo "Usage: ./setup.sh server|desktop"
   exit 1
   ;;
 esac
 
-# install custom packages
+echo "intalling extra packages"
 sudo apt update && sudo apt install -y \
   build-essential \
   direnv \
   fd-find \
-  fzf \
   git \
   libfontconfig-dev \
   libfuse2 \
@@ -33,55 +32,61 @@ sudo apt update && sudo apt install -y \
   tree \
   unzip
 
-# create custom directories in the user home directory
+echo "creating home directory structure"
 mkdir -p ${HOME}/.local/share/{fonts,icons}
-ln -sf ${SCRIPT_DIR}/.bashrc.d/ ${HOME}/.bashrc.d/
-ln -sf ${SCRIPT_DIR}/.bash_completion.d/ ${HOME}/.bash_completion.d/
 
-# install nerd fonts
+echo "symlinking configuration files"
+for _filename in .aliasses .bashrc .bashrc.d .bash_completion.d .config/zellij .inputrc .profile .gitignore .config/nvim; do
+  if [ ! -e "${HOME}/$_filename" ]; then
+    ln -sf "${SCRIPT_DIR}/$_filename" "${HOME}/$_filename"
+  fi
+done
 
+echo "installing nerd fonts"
 if [ ! "${HOME}/.local/share/fonts/NotoMonoNerdFont-Regular.ttf" ]; then
   curl -LO https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Noto.zip
   unzip -d ${HOME}/.local/share/fonts Noto.zip
   rm Noto.zip
 fi
 
-# install kubectl aliasses
+echo "installing kubectl aliasses"
 if [ ! -d "${HOME}/github.com/ahmetb/kubectl-aliases" ]; then
   git clone https://github.com/ahmetb/kubectl-aliases ${HOME}/github.com/ahmetb/kubectl-aliases
 fi
 
-# install alias completions
+echo "installing alias completions"
 if [ ! -d "${HOME}/github.com/cykerway/complete-alias" ]; then
   git clone https://github.com/cykerway/complete-alias ${HOME}/github.com/cykerway/complete-alias
 fi
 
-# install rust and cargo
+echo "installing rust and cargo"
 if [ ! -d "${HOME}/.cargo" ]; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 fi
 
-# install and configure zellij
+echo "installing zellij"
 if [ ! "$(which zellij)" ]; then
   cargo install zellij
-  ln -sf ${SCRIPT_DIR}/.config/zellij/config.kdl ${HOME}/.config/zellij/config.kdl
-  ln -sf ${SCRIPT_DIR}/.config/zellij/config.kdl ${HOME}/.config/zellij/workspace-layout.kdl
 fi
 
-# install golang
+echo "installing fzf"
+mkdir -p ${HOME}/.local/share/doc/fzf/examples/
+if [ ! "$(which fzf)" ]; then
+  curl -sLo - https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz | tar -C ${HOME}/.local/bin/ -xzf -
+fi
+${HOME}/.local/bin/fzf --bash >${HOME}/.local/share/doc/fzf/examples/key-bindings.bash
+
+echo "installing golang"
 if [ ! "$(which go)" ]; then
-  curl -Lo - https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz | sudo tar -C /usr/local/bin/ -xzf -
+  curl -sLo - https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz | sudo tar -C /usr/local/bin/ -xzf -
 fi
 
-# install azure-cli
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+echo "installing azure-cli"
+if [ ! "$(which az)" ]; then
+  curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+fi
 
-# symlink configuration files
-for _filename in .aliasses .bashrc .inputrc .profile .gitignore .config/nvim; do
-  ln -sf "${SCRIPT_DIR}/$_filename" "${HOME}/$_filename"
-done
-
-# configure global gitignore
+echo "configuring global gitignore"
 git config --global core.excludesFile '~/.gitignore'
 
 # Install and configure GUI features only on desktops

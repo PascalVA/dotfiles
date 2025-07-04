@@ -184,6 +184,9 @@ fi
 if [ -f "/usr/share/doc/fzf/examples/key-bindings.bash" ]; then
   source "/usr/share/doc/fzf/examples/key-bindings.bash"
 fi
+if [ -f "${HOME}/.local/share/doc/fzf/examples/key-bindings.bash" ]; then
+  source "${HOME}/.local/share/doc/fzf/examples/key-bindings.bash"
+fi
 
 # source kubectl command aliases
 if [ -f "${THIS_REAL_DIR}/../../github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
