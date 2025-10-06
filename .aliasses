@@ -6,6 +6,7 @@
 # custom aliases
 #
 
+alias docker-compose='docker compose'
 alias ac='ansible-console'
 alias ap='ansible-playbook'
 alias av='ansible-vault'
