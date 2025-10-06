@@ -192,8 +192,8 @@ if [ -f "${HOME}/.local/share/doc/fzf/examples/key-bindings.bash" ]; then
 fi
 
 # source kubectl command aliases
-if [ -f "${THIS_REAL_DIR}/../../github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
-  source "${THIS_REAL_DIR}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases"
+if [ -f "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
+  source "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases"
   for complete_alias in $(sed '/^alias /!d;s/^alias //;s/=.*$//' ${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases); do
     complete -F _complete_alias "$complete_alias"
   done
