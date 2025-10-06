@@ -18,6 +18,8 @@ if [ "$color_scheme" = "'prefer-light'" ]; then
   # sed -i 's/\(colorscheme =\) "[^"]\+"/\1 "nightfox"/' ~/.config/nvim/lua/plugins/colorscheme.lua
   sed -i 's/\(style =\) "[^"]\+"/\1 "cool"/' ~/.config/nvim/lua/plugins/colorscheme.lua
   sed -i 's/\(theme\) .*/\1 "iceberg-dark"/' ~/.config/zellij/config.kdl
+  git config --global delta.dark true
+  git config --global delta.light false
 else
   echo "toggle light"
   gsettings set org.gnome.desktop.interface color-scheme prefer-light
@@ -29,4 +31,6 @@ else
   # sed -i 's/\(colorscheme =\) "[^"]\+"/\1 "dayfox"/' ~/.config/nvim/lua/plugins/colorscheme.lua
   sed -i 's/\(style =\) "[^"]\+"/\1 "light"/' ~/.config/nvim/lua/plugins/colorscheme.lua
   sed -i 's/\(theme\) .*/\1 "catppuccin-latte"/' ~/.config/zellij/config.kdl
+  git config --global delta.dark false
+  git config --global delta.light true
 fi
