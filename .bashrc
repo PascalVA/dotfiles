@@ -59,6 +59,9 @@ if [ "$(which argocd 2>/dev/null)" ]; then
   source <(argocd completion bash)
 fi
 
+# source cargo commands
+source "$HOME/.cargo/env"
+
 #
 # HELPER FUNCTIONS
 #
@@ -144,7 +147,7 @@ PROMPT_COMMAND=__prompt_command
 # SHELL CONFIG
 #
 
-HISTCONTROL=ignoreboth:erasedups # don't log duplicate commands or commands starting with spaces
+HISTCONTROL=ignoreboth # don't log duplicate commands or commands starting with spaces
 HISTTIMEFORMAT="%d/%m/%y %T "
 HISTSIZE=-1
 HISTFILESIZE=-1
@@ -204,4 +207,6 @@ fi
 eval "$(direnv hook bash)"
 
 # source aliasses
-source "$HOME/.cargo/env"
+source ${THIS_REAL_DIR}/.aliasses
+
+complete -C /home/pvanacker/.asdf/installs/vault/1.19.3+ent/bin/vault vault
