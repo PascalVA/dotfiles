@@ -39,7 +39,7 @@ alias watch='watch '
 # docker apps
 #
 
-alias docuserver='docker run -ti --rm -v $(pwd)/:/usr/src/app/ --workdir /usr/src/app/ --network host --entrypoint bash node -c "npm install; npm run start"'
+alias docuserver='docker run -d --rm -v $(pwd)/:/usr/src/app/ --workdir /usr/src/app/ --network host --entrypoint bash --name docuserver node -c "npm install; npm run start"'
 
 if [ "$(
   which az 2>&1 >/dev/null
@@ -48,4 +48,4 @@ if [ "$(
   alias az='docker run --rm -ti --log-driver=none --user $UID --workdir=/workdir -v $(pwd):/workdir -v ~/.azure:/.azure mcr.microsoft.com/azure-cli az'
 fi
 
-alias hugo='docker run -ti --rm --network host --log-driver none -p 1313:1313 -v $(pwd):/content/ hugo:latest hugo'
+#alias hugo='docker run -ti --rm --network host --log-driver none -p 1313:1313 -v $(pwd):/content/ hugo:latest hugo'

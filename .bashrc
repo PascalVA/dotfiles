@@ -163,8 +163,8 @@ shopt -s checkwinsize
 # ENVIRONMENT SETUP
 #
 
-export EDITOR=vi
-export KUBE_EDITOR=vi
+export EDITOR=nvim
+export KUBE_EDITOR=nvim
 
 # no cows in my shell
 export ANSIBLE_NOCOWS=1

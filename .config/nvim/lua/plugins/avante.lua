@@ -9,11 +9,11 @@ return {
     provider = "openai",
     providers = {
       openai = {
-        endpoint = "cmd:echo $ANTHROPIC_BASE_URL",
+        endpoint = "https://openrouter.ai/api/v1",
         -- model = "claude-sonnet-4-20250514",
-        model = "claude-3-5-haiku-latest",
+        model = "anthropic/claude-sonnet-4.5",
         timeout = 60000, -- Increased timeout for complex requests
-        api_key_name = "cmd:echo $ANTHROPIC_AUTH_TOKEN",
+        api_key_name = "OPENROUTER_API_KEY",
         extra_request_body = {
           temperature = 0.75,
           max_tokens = 8192,
