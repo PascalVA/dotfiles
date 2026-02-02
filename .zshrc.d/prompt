@@ -1,0 +1,13 @@
+autoload -Uz vcs_info
+zstyle ':vcs_info:git:*' formats ' %b'
+
+# Enable prompt substitution
+setopt PROMPT_SUBST
+
+precmd() {
+  vcs_info
+}
+
+# Simple but informative prompt
+PROMPT=$'[%F{#AAA}%n@%m%f] $(kube_prompt)%F{blue}%2~%f$vcs_info_msg_0_ \n\(%(?.%?.%F{red}%?%f)\)%(!.#.$) '
+

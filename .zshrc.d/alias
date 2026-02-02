@@ -1,0 +1,4 @@
+alias vi=nvim
+alias vim=nvim
+alias s=switch
+alias z=zellij
