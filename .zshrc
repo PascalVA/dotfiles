@@ -219,21 +219,25 @@ setopt NUMERIC_GLOB_SORT       # Sort filenames numerically when it makes sense
 # Load .zshrc.local if it exists
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
+# Load mise-en-place context
+eval "$(mise activate zsh)"
+
 # Load kubernetes context switcher if installed
 SWITCHER_EXECUTABLE=$(which switcher 2>/dev/null)
-if [ "$SWITCHER_EXECUTABLE" ]; then
+if [[ $? == 0 ]]; then
   source <($SWITCHER_EXECUTABLE init zsh)
+  source <($SWITCHER_EXECUTABLE completion zsh)
+fi
+
+# Load kubectl completions
+KUBECTL_EXECUTABLE=$(which kubectl 2>/dev/null)
+if [[ $? == 0 ]]; then
+  source <($KUBECTL_EXECUTABLE completion zsh)
 fi
 
 # Source kubectl command aliases
 if [ -f "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
   source "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases"
-fi
-
-# Load kubectl completions
-KUBECTL_EXECUTABLE=$(which kubectl 2>/dev/null)
-if [ "$KUBECTL_EXECUTABLE" ]; then
-  source <($KUBECTL_EXECUTABLE completion zsh)
 fi
 
 # zsh magic to get currently executing script name, see `man zshexpn` and `man zshmisc` for details
@@ -250,4 +254,3 @@ if [ -d "${SCRIPT_SOURCE_REAL_DIR}/.zshrc.d/" ]; then
     source ${zsh_source}
   done
 fi
-

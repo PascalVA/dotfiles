@@ -3,8 +3,6 @@
 # store the parent directory path of this script so we
 # can use it for symlinking files later
 SCRIPT_DIR=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
-FZF_VERSION=$(basename $(curl -Ls -o /dev/null -w %{url_effective} https://github.com/junegunn/fzf/releases/latest | tr -d v))
-GOLANG_VERSION=1.24.4
 SETUP_TARGET=$1
 
 case $SETUP_TARGET in
@@ -16,19 +14,22 @@ desktop) ;;
   ;;
 esac
 
+echo "installing mise repository"
+sudo install -dm 755 /etc/apt/keyrings
+curl -fSs https://mise.jdx.dev/gpg-key.pub | sudo tee /etc/apt/keyrings/mise-archive-keyring.asc 1>/dev/null
+echo "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.asc] https://mise.jdx.dev/deb stable main" | sudo tee /etc/apt/sources.list.d/mise.list
+
 echo "intalling extra packages"
 sudo apt update && sudo apt install -y \
   build-essential \
+  curl \
   direnv \
-  fd-find \
   git \
-  libfontconfig-dev \
   libfuse2 \
   pkg-config \
   python-is-python3 \
   python3-venv \
   ranger \
-  ripgrep \
   tree \
   unzip
 
@@ -42,8 +43,14 @@ for _filename in .aliasses .bashrc .bashrc.d .bash_completion.d .config/zellij .
   fi
 done
 
+echo "installing packages using mise"
+for _mise_package in azure-cli fd fzf go kind kubectl kubeswitch ripgrep uv zellij; do
+  echo "installing $_mise_package"
+  mise use --global $_mise_package
+done
+
 echo "installing nerd fonts"
-if [ ! "${HOME}/.local/share/fonts/NotoMonoNerdFont-Regular.ttf" ]; then
+if [ ! -f "${HOME}/.local/share/fonts/NotoMonoNerdFont-Regular.ttf" ]; then
   curl -LO https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Noto.zip
   unzip -d ${HOME}/.local/share/fonts Noto.zip
   rm Noto.zip
@@ -64,28 +71,6 @@ if [ ! -d "${HOME}/.cargo" ]; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 fi
 
-echo "installing zellij"
-if [ ! "$(which zellij)" ]; then
-  cargo install zellij
-fi
-
-echo "installing fzf"
-mkdir -p ${HOME}/.local/share/doc/fzf/examples/
-if [ ! "$(which fzf)" ]; then
-  curl -sLo - https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz | tar -C ${HOME}/.local/bin/ -xzf -
-fi
-${HOME}/.local/bin/fzf --bash >${HOME}/.local/share/doc/fzf/examples/key-bindings.bash
-
-echo "installing golang"
-if [ ! "$(which go)" ]; then
-  curl -sLo - https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz | sudo tar -C /usr/local/bin/ -xzf -
-fi
-
-echo "installing azure-cli"
-if [ ! "$(which az)" ]; then
-  curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-fi
-
 echo "configuring global gitignore"
 git config --global core.excludesFile '~/.gitignore'
 
@@ -93,20 +78,18 @@ git config --global core.excludesFile '~/.gitignore'
 if [ "$SETUP_TARGET" == "desktop" ]; then
 
   echo "DESKTOP SETUP"
-  exit 0
 
   # copy and configure light-mode/dark-mode switcher
   ln -sf ${SCRIPT_DIR}/.local/bin/toggle-color-mode-gnome.sh ${HOME}/.local/bin/toggle-color-mode-gnome.sh
 
   # install wl-clipboard tools
   sudo apt install -y \
+    libfontconfig-dev \
+    libfontconfig1-dev \
+    libxcb-xfixes0-dev \
+    libxkbcommon-dev \
     wl-clipboard \
     xclip
-
-  # install alacritty terminal emulator
-  if [ -n "${DISPLAY}" ]; then
-    cargo install alacritty
-  fi
 
   # configure alacritty
   mkdir -p ${HOME}/.config/alacritty
