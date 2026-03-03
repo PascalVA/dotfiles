@@ -1,14 +1,18 @@
-vim.opt.background = "dark"
 return {
   {
     "navarasu/onedark.nvim",
+  },
+  {
+    "LazyVim/LazyVim",
     opts = {
-      style = "cool",
+      colorscheme = function()
+        local f = io.popen("gsettings get org.gnome.desktop.interface color-scheme")
+        local colorscheme = f:read()
+        require("onedark").setup({
+          style = (colorscheme == "'prefer-light'") and "light" or "dark",
+        })
+        require("onedark").load()
+      end,
     },
-    config = function(_, opts)
-      local onedark = require("onedark")
-      onedark.setup(opts)
-      onedark.load()
-    end,
   },
 }
