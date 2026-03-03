@@ -13,7 +13,6 @@ function __kubectl_get_secret_decoded () {
         return 0
     fi
 }
-
 alias kgsecd="__kubectl_get_secret_decoded"
 alias kubeclt="kubectl"
 alias ku='export KUBECONFIG=""'

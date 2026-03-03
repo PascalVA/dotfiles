@@ -9,10 +9,15 @@ layout {
         children
     }
 
-    tab name="dev" cwd="${HOME}/github.com/pascalva/" {
-        pane
-    }
     tab name="nvim" {
         pane command="nvim" close_on_exit=true
+    }
+
+    tab name="infra" cwd="${HOME}/gitlab.intdw.org/p.vanacker/infrastructure/master" {
+        pane split_direction="vertical" {
+          pane
+          pane
+        }
+        pane
     }
 }

@@ -223,7 +223,7 @@ keybinds clear-defaults=true {
         bind "space" { NextSwapLayout; }
         bind "\"" { NewPane "down"; SwitchToMode "normal"; }
         bind "%" { NewPane "right"; SwitchToMode "normal"; }
-        bind "," { SwitchToMode "renametab"; }
+        bind "," { SwitchToMode "renametab"; TabNameInput 0; }
         bind "[" { SwitchToMode "scroll"; }
         bind "Ctrl b" { Write 2; SwitchToMode "normal"; }
         bind "c" { NewTab; SwitchToMode "normal"; }
@@ -232,7 +232,7 @@ keybinds clear-defaults=true {
         bind "k" { MoveFocus "up"; SwitchToMode "normal"; }
         bind "l" { MoveFocus "right"; SwitchToMode "normal"; }
         bind "n" { GoToNextTab; SwitchToMode "normal"; }
-        bind "o" { FocusNextPane; }
+        bind "o" { FocusNextPane; SwitchToMode "normal"; }
         bind "p" { GoToPreviousTab; SwitchToMode "normal"; }
         bind "z" { ToggleFocusFullscreen; SwitchToMode "normal"; }
 
@@ -288,10 +288,10 @@ load_plugins {
 //
 // simplified_ui true
 
-// Choose the theme "iceberg-dark"
+// Choose the theme "catppuccin-latte"
 // Default: default
 //
-theme "iceberg-dark"
+theme "catppuccin-latte"
 
 // Choose the base input mode of zellij.
 // Default: normal

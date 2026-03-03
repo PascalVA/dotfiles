@@ -70,12 +70,16 @@ fi
 # Use emacs keybindings
 bindkey -e
 
-# Additional useful keybindings
-bindkey '^[[A' history-beginning-search-backward  # Up arrow
-bindkey '^[[B' history-beginning-search-forward   # Down arrow
-bindkey '^[[H' beginning-of-line                  # Home
-bindkey '^[[F' end-of-line                        # End
-bindkey '^[[3~' delete-char                       # Delete
+# enable history search with prefix
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+[[ -n "${key[Up]}"   ]] && bindkey -- "${key[Up]}"   up-line-or-beginning-search
+[[ -n "${key[Down]}" ]] && bindkey -- "${key[Down]}" down-line-or-beginning-search
+
+autoload edit-command-line
+zle -N edit-command-line
+bindkey '^x^e' edit-command-line
 
 # ----------------------------------------------------------------------------
 # Aliases
@@ -122,6 +126,8 @@ if command -v git &> /dev/null; then
     alias gg=' git grep'
 fi
 
+alias docuserver='docker run -d --rm -v $(pwd)/:/usr/src/app/ --workdir /usr/src/app/ --network host --entrypoint bash --name docuserver node -c "npm install; npm run start"'
+
 # ----------------------------------------------------------------------------
 # Environment Variables
 # ----------------------------------------------------------------------------
@@ -134,7 +140,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
 # Less options
-export LESS='-R -M -i'
+export LESS='-X -F -R -M -i'
 
 export FZF_DEFAULT_OPTS="--layout=reverse"
 export XKB_DEFAULT_OPTIONS=compose:ralt
@@ -254,3 +260,8 @@ if [ -d "${SCRIPT_SOURCE_REAL_DIR}/.zshrc.d/" ]; then
     source ${zsh_source}
   done
 fi
+
+autoload -U select-word-style
+select-word-style bash
+
+
