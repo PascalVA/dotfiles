@@ -1,2 +1,3 @@
 .envrc
 .config/nvim/lazy-lock.json
+mise.local.toml
