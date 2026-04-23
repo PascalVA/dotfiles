@@ -26,6 +26,7 @@ sudo apt update && sudo apt install -y \
   direnv \
   git \
   libfuse2 \
+  mise \
   pkg-config \
   python-is-python3 \
   python3-venv \

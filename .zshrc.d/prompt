@@ -8,6 +8,9 @@ precmd() {
   vcs_info
 }
 
+# disable python virtuelenv prompt mangling
+export VIRTUAL_ENV_DISABLE_PROMPT=true
+
 # Simple but informative prompt
 PROMPT=$'[%n@%m] %F{magenta}${VIRTUAL_ENV_PROMPT}%f$(kube_prompt)%F{blue}%2~%f$vcs_info_msg_0_ \n\(%(?.%?.%F{red}%?%f)\)%(!.#.$) '
 
