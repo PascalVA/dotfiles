@@ -237,6 +237,7 @@ keybinds clear-defaults=true {
         bind "z" { ToggleFocusFullscreen; SwitchToMode "normal"; }
 
         // custom binds
+        bind "s" { ToggleActiveSyncTab; SwitchToMode "normal"; }
         bind "w" { ToggleFloatingPanes; SwitchToMode "normal"; }
         bind "1" { GoToTab 1; SwitchToMode "normal"; }
         bind "2" { GoToTab 2; SwitchToMode "normal"; }
@@ -310,12 +311,12 @@ theme "catppuccin-latte"
 // The name of the default layout to load on startup
 // Default: "default"
 //
-default_layout "workspace-layout"
+default_layout "tadaweb"
 
 // The folder in which Zellij will look for layouts
 // (Requires restart)
 //
-layout_dir ".config/zellij/"
+layout_dir "/home/pvanacker/.config/zellij/layouts"
 
 // The folder in which Zellij will look for themes
 // (Requires restart)

@@ -142,6 +142,9 @@ export LC_ALL=en_US.UTF-8
 # Less options
 export LESS='-X -F -R -M -i'
 
+# ArgoCD cli options
+export ARGOCD_OPTS=--grpc-web
+
 export FZF_DEFAULT_OPTS="--layout=reverse"
 export XKB_DEFAULT_OPTIONS=compose:ralt
 
