@@ -38,7 +38,7 @@ echo "creating home directory structure"
 mkdir -p ${HOME}/.local/share/{fonts,icons}
 
 echo "symlinking configuration files"
-for _filename in .aliasses .bashrc .bashrc.d .bash_completion.d .config/zellij .inputrc .profile .gitignore .config/nvim; do
+for _filename in .aliasses .bashrc .bashrc.d .bash_completion.d .config/zellij .inputrc .markdownlint.yaml .profile .gitignore .config/nvim; do
   if [ ! -e "${HOME}/$_filename" ]; then
     ln -sf "${SCRIPT_DIR}/$_filename" "${HOME}/$_filename"
   fi
