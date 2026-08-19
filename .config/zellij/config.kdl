@@ -153,9 +153,6 @@ keybinds clear-defaults=true {
     shared_except "locked" "move" {
         bind "Ctrl h" { SwitchToMode "move"; }
     }
-    shared_except "locked" "session" {
-        bind "Ctrl o" { SwitchToMode "session"; }
-    }
     shared_except "locked" "scroll" "search" "tmux" {
         bind "Ctrl b" { SwitchToMode "tmux"; }
     }
@@ -249,6 +246,7 @@ keybinds clear-defaults=true {
         bind "8" { GoToTab 8; SwitchToMode "normal"; }
         bind "9" { GoToTab 9; SwitchToMode "normal"; }
         bind "0" { GoToTab 10; SwitchToMode "normal"; }
+        bind ";" { SwitchToMode "session"; }
 
         bind "left" { Resize "Increase left"; }
         bind "down" { Resize "Increase down"; }

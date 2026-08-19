@@ -16,3 +16,5 @@ function __kubectl_get_secret_decoded () {
 alias kgsecd="__kubectl_get_secret_decoded"
 alias kubeclt="kubectl"
 alias ku='export KUBECONFIG=""'
+alias kgpoi="kubectl get pods -o custom-columns='NAME:.metadata.name,PHASE:.status.phase,IMAGES:.spec.containers[].image'"
+alias kgpoil="kubectl get pods -o custom-columns='NAME:.metadata.name,PHASE:.status.phase,IMAGES:.spec.containers[].image' -l "
