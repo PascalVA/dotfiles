@@ -1,0 +1,35 @@
+# tailscale socks proxy that is usable in a browser
+# it requires NET_ADMIN capability to have proper
+# DNS resolution over socks, without it, DNS
+# resolution from the browser goes through the
+# docker resolver instead of tailscale
+#
+# on first run, set TS_AUTHKEY in your environment
+# read TS_AUTHKEY; export TS_AUTHKEY
+services:
+  tailscale-socks:
+    image: tailscale/tailscale:stable
+    container_name: ts-socks
+    hostname: socks-proxy
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_USERSPACE: "false"
+      TS_SOCKS5_SERVER: 0.0.0.0:1055
+      TS_OUTBOUND_HTTP_PROXY_LISTEN: 0.0.0.0:1056
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_HOSTNAME: socks-proxy
+      TS_ACCEPT_DNS: "true"
+      TS_EXTRA_ARGS: --accept-routes
+    volumes:
+      - ts-socks-state:/var/lib/tailscale
+    ports:
+      - "127.0.0.1:1055:1055"   # SOCKS5
+      - "127.0.0.1:1056:1056"   # HTTP proxy
+
+volumes:
+  ts-socks-state:
