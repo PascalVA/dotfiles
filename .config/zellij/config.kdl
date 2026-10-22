@@ -1,6 +1,6 @@
 keybinds clear-defaults=true {
     // remove normal mode and only use tmux mode
-    normal clear-defaults=true {
+    normal {
         bind "Ctrl b" { SwitchToMode "tmux"; }
     }
     locked {
@@ -79,7 +79,6 @@ keybinds clear-defaults=true {
         bind "up" { MovePane "up"; }
         bind "right" { MovePane "right"; }
         bind "h" { MovePane "left"; }
-        bind "Ctrl h" { SwitchToMode "normal"; }
         bind "j" { MovePane "down"; }
         bind "k" { MovePane "up"; }
         bind "l" { MovePane "right"; }
@@ -150,11 +149,9 @@ keybinds clear-defaults=true {
         bind "Alt o" { MoveTab "right"; }
         bind "Ctrl q" { Quit; }
     }
-    shared_except "locked" "move" {
-        bind "Ctrl h" { SwitchToMode "move"; }
-    }
     shared_except "locked" "scroll" "search" "tmux" {
         bind "Ctrl b" { SwitchToMode "tmux"; }
+        bind "Ctrl a" { Write 2; }
     }
     shared_except "locked" "scroll" "search" {
         bind "Ctrl s" { SwitchToMode "scroll"; }
@@ -162,12 +159,12 @@ keybinds clear-defaults=true {
     shared_except "locked" "tab" {
         bind "Ctrl t" { SwitchToMode "tab"; }
     }
-    shared_except "locked" "pane" {
-        bind "Ctrl p" { SwitchToMode "pane"; }
-    }
-    shared_except "locked" "resize" {
-        bind "Ctrl n" { SwitchToMode "resize"; }
-    }
+    // shared_except "locked" "pane" {
+    //     bind "Ctrl p" { SwitchToMode "pane"; }
+    // }
+    // shared_except "locked" "resize" {
+    //     bind "Ctrl n" { SwitchToMode "resize"; }
+    // }
     shared_except "normal" "locked" "entersearch" {
         bind "enter" { SwitchToMode "normal"; }
     }
