@@ -82,6 +82,7 @@ if [ "$SETUP_TARGET" == "desktop" ]; then
 
   # copy and configure light-mode/dark-mode switcher
   ln -sf ${SCRIPT_DIR}/.local/bin/toggle-color-mode-gnome.sh ${HOME}/.local/bin/toggle-color-mode-gnome.sh
+  ln -sf ${SCRIPT_DIR}/.local/bin/box ${HOME}/.local/bin/box
 
   # install wl-clipboard tools
   sudo apt install -y \

@@ -1,0 +1,392 @@
+#!/usr/bin/python3
+"""box: disposable libvirt VM sandboxes.
+
+  box new [name] [-c vcpus] [-r mem_gib] [-d disk] [-t template] [-m host[:guest]]...
+      Ephemeral: create, boot, open a shell; the VM is deleted when the shell exits.
+      The guest user matches you (name, uid, gid, home). Always mounted:
+        /opt/sandbox/.claude -> ~/.claude
+        ~/gitlab.intdw.org   -> ~/gitlab.intdw.org
+  box run [name] [same options]
+      Like new, but the box is kept; running it again attaches to it.
+  box create <name> [same options] [-u user-data]
+      Define a VM without starting it (no default mounts).
+  box ssh <name> [command...]      attach another shell to a running box
+  box update-template [template]   upgrade the base image in a temporary VM and
+                                   store it as <images>/<image>-latest.qcow2
+  box start|stop|kill|ip|rm <name>
+  box ls
+
+The sandbox tree is $BOX_SANDBOX_DIR (default /opt/sandbox), holding .claude/,
+images/, templates/<template>/ and machines/. A box boots from
+images/<image>-latest.qcow2 when present, else from the base image named in
+templates/<template>/image. Each VM lives in machines/<name>: disk.qcow2
+(overlay), seed.iso (cloud-init), nvram.fd and the rendered domain.xml.
+"""
+
+import argparse
+import base64
+import json
+import os
+import pwd
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+
+ROOT = Path(os.environ.get("BOX_SANDBOX_DIR", "/opt/sandbox"))
+TEMPLATES = ROOT / "templates"
+IMAGES = ROOT / "images"
+VMS = ROOT / "machines"
+CLAUDE_DIR = ROOT / ".claude"
+GITLAB_DIR = Path.home() / "gitlab.intdw.org"
+
+ME = pwd.getpwuid(os.getuid())
+SSH_OPTS = ["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "LogLevel=ERROR"]
+LIBVIRT_ENV = {**os.environ, "LIBVIRT_DEFAULT_URI": "qemu:///system"}
+
+
+def die(msg):
+    sys.exit(f"box: {msg}")
+
+
+def log(msg):
+    print(msg, file=sys.stderr)
+
+
+def virsh(*args, check=True):
+    """Run virsh and return its stdout; None if it failed and check is False."""
+    result = subprocess.run(["virsh", *args], env=LIBVIRT_ENV, capture_output=True, text=True)
+    if result.returncode != 0:
+        if check:
+            die(result.stderr.strip())
+        return None
+    return result.stdout.strip()
+
+
+def ssh(ip, *command, tty=False):
+    opts = [*SSH_OPTS, "-t"] if tty else SSH_OPTS
+    return subprocess.call(["ssh", *opts, f"{ME.pw_name}@{ip}", *command])
+
+
+# --- VM state --------------------------------------------------------------
+
+def exists(name):
+    return virsh("dominfo", name, check=False) is not None
+
+
+def running(name):
+    return virsh("domstate", name, check=False) == "running"
+
+
+def ip_of(name):
+    for line in (virsh("domifaddr", name, "--source", "lease", check=False) or "").splitlines():
+        fields = line.split()
+        if len(fields) == 4 and fields[2] == "ipv4":
+            return fields[3].split("/")[0]
+    return None
+
+
+def remove(name):
+    if running(name):
+        virsh("destroy", name)
+    if exists(name):
+        virsh("undefine", "--nvram", name)
+    shutil.rmtree(VMS / name, ignore_errors=True)
+    log(f"removed {name}")
+
+
+def guest_run(name, *command):
+    """Run a command inside the guest through the QEMU agent; return stdout or None."""
+    def agent(cmd, args):
+        out = virsh("qemu-agent-command", name, json.dumps({"execute": cmd, "arguments": args}), check=False)
+        return json.loads(out)["return"] if out else None
+
+    started = agent("guest-exec", {"path": command[0], "arg": list(command[1:]), "capture-output": True})
+    if not started:
+        return None
+    for _ in range(5):
+        status = agent("guest-exec-status", {"pid": started["pid"]})
+        if status and status["exited"]:
+            return base64.b64decode(status.get("out-data", "")).decode()
+        time.sleep(1)
+    return None
+
+
+def wait_ssh(name, timeout=180):
+    """Wait until the guest has an IP and accepts ssh; return the IP."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        ip = ip_of(name)
+        if ip and subprocess.call(["ssh", *SSH_OPTS, "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
+                                   f"{ME.pw_name}@{ip}", "true"], stderr=subprocess.DEVNULL) == 0:
+            return ip
+        time.sleep(2)
+    die(f"timed out waiting for ssh on {name}")
+
+
+def ensure_running(name):
+    if not exists(name):
+        die(f"no such vm: {name} (box new {name})")
+    if not running(name):
+        virsh("start", name)
+
+
+# --- VM creation -----------------------------------------------------------
+
+@dataclass
+class Spec:
+    name: str
+    template: str = "ubuntu-26.04"
+    vcpus: int = 8
+    mem_gib: int = 16
+    disk: str = "40G"
+    user_data: Path | None = None
+    mounts: list[tuple[Path, str]] = field(default_factory=list)
+
+    @property
+    def template_dir(self):
+        return TEMPLATES / self.template
+
+    @property
+    def vm_dir(self):
+        return VMS / self.name
+
+    @property
+    def base_image(self):
+        return IMAGES / (self.template_dir / "image").read_text().strip()
+
+    @property
+    def latest_image(self):
+        return IMAGES / f"{self.base_image.stem}-latest.qcow2"
+
+    @property
+    def image(self):
+        return self.latest_image if self.latest_image.exists() else self.base_image
+
+
+def parse_mount(text):
+    """'host[:guest]' -> (host, guest); guest defaults to /mnt/<basename of host>."""
+    host, _, guest = text.partition(":")
+    host = Path(host).expanduser().resolve()
+    if not host.is_dir():
+        die(f"host mount dir does not exist: {host}")
+    return host, guest or f"/mnt/{host.name}"
+
+
+def ssh_public_key():
+    key = os.environ.get("SSH_PUBKEY")
+    if key:
+        return key
+    for candidate in [Path.home() / ".ssh/id_ed25519.pub", *sorted(Path.home().glob(".ssh/id_*.pub"))]:
+        if candidate.exists():
+            return candidate.read_text().strip()
+    die("no ssh public key found in ~/.ssh")
+
+
+def render(path, values, blocks):
+    """Substitute @@KEY@@ placeholders; a line holding only a block key is replaced by that block."""
+    lines = []
+    for line in path.read_text().splitlines():
+        if line.strip() in blocks:
+            lines.extend(blocks[line.strip()])
+            continue
+        for key, value in values.items():
+            line = line.replace(f"@@{key}@@", str(value))
+        lines.append(line)
+    return "\n".join(lines) + "\n"
+
+
+def create(spec):
+    """Render the template, build the overlay disk and cloud-init seed, define the domain."""
+    if not spec.template_dir.is_dir():
+        die(f"no such template: {spec.template_dir}")
+    if not os.access(spec.image, os.R_OK):
+        die(f"base image not readable: {spec.image}")
+    if spec.vm_dir.exists():
+        die(f"already exists: {spec.vm_dir}")
+    user_data = spec.user_data or spec.template_dir / "user-data"
+
+    values = {
+        "NAME": spec.name, "VCPUS": spec.vcpus, "MEM_GIB": spec.mem_gib, "VM_DIR": spec.vm_dir,
+        "USER": ME.pw_name, "UID": ME.pw_uid, "GID": ME.pw_gid, "HOME": ME.pw_dir, "SSH_KEY": ssh_public_key(),
+    }
+    filesystems, fstab = [], ["mounts:"] if spec.mounts else []
+    for i, (host, guest) in enumerate(spec.mounts):
+        filesystems += [
+            '    <filesystem type="mount" accessmode="passthrough">',
+            '      <driver type="virtiofs"/>',
+            f'      <source dir="{host}"/>',
+            f'      <target dir="fs{i}"/>',
+            "    </filesystem>",
+        ]
+        fstab.append(f'  - [fs{i}, {guest}, virtiofs, defaults, "0", "0"]')
+    blocks = {"@@FILESYSTEMS@@": filesystems, "@@MOUNTS@@": fstab}
+
+    spec.vm_dir.mkdir()
+    (spec.vm_dir / "domain.xml").write_text(render(spec.template_dir / "domain.xml", values, blocks))
+    with tempfile.TemporaryDirectory() as work:
+        work = Path(work)
+        (work / "user-data").write_text(render(user_data, values, blocks))
+        (work / "meta-data").write_text(render(spec.template_dir / "meta-data", values, blocks))
+        subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b", str(spec.image),
+                        str(spec.vm_dir / "disk.qcow2"), spec.disk], check=True)
+        subprocess.run(["xorriso", "-as", "mkisofs", "-quiet", "-o", str(spec.vm_dir / "seed.iso"),
+                        "-V", "cidata", "-J", "-r", str(work / "user-data"), str(work / "meta-data")],
+                       check=True, stderr=subprocess.DEVNULL)
+    virsh("define", str(spec.vm_dir / "domain.xml"))
+    log(f"created {spec.name}: {spec.vcpus} vCPU, {spec.mem_gib} GiB, {spec.disk} disk, "
+        f"{len(spec.mounts)} mount(s), image {spec.image.name}")
+
+
+# --- commands --------------------------------------------------------------
+
+def spec_from(args, name):
+    return Spec(name=name, template=args.template, vcpus=args.vcpus, mem_gib=args.mem_gib, disk=args.disk,
+                user_data=getattr(args, "user_data", None), mounts=[parse_mount(m) for m in args.mounts])
+
+
+def box_spec(args):
+    """Spec for a full box: the caller's defaults plus the .claude and gitlab mounts."""
+    for required in (CLAUDE_DIR, GITLAB_DIR):
+        if not required.is_dir():
+            die(f"missing {required}")
+    spec = spec_from(args, args.name or f"box-{os.getpid()}")
+    spec.mounts = [(CLAUDE_DIR, f"{ME.pw_dir}/.claude"), (GITLAB_DIR, str(GITLAB_DIR)), *spec.mounts]
+    return spec
+
+
+def launch(name):
+    """Start a defined box, wait for ssh and cloud-init, return its IP."""
+    virsh("start", name)
+    log("waiting for ssh...")
+    ip = wait_ssh(name)
+    log("waiting for cloud-init (updates, mise, dotfiles)...")
+    if ssh(ip, "cloud-init status --wait >/dev/null") != 0:
+        log("warning: cloud-init reported errors; see /var/log/cloud-init-output.log")
+    return ip
+
+
+def cmd_new(args):
+    spec = box_spec(args)
+    create(spec)
+    try:
+        ssh(launch(spec.name))
+    finally:
+        remove(spec.name)
+
+
+def cmd_run(args):
+    spec = box_spec(args)
+    if exists(spec.name):
+        ensure_running(spec.name)
+        ssh(wait_ssh(spec.name))
+        return
+    create(spec)
+    ssh(launch(spec.name))
+
+
+def cmd_create(args):
+    create(spec_from(args, args.name))
+
+
+def cmd_ssh(args):
+    ensure_running(args.name)
+    sys.exit(ssh(wait_ssh(args.name), *args.command, tty=bool(args.command)))
+
+
+def cmd_update_template(args):
+    template = args.template
+    name = f"update-{template}-{datetime.now():%Y%m%d-%H%M%S}"
+    # 10G: enough headroom for upgrades; boxes may still shrink to any size >= this
+    spec = Spec(name=name, template=template, vcpus=4, mem_gib=4, disk="10G",
+                user_data=TEMPLATES / template / "user-data.update")
+    out = spec.latest_image
+    create(spec)
+    virsh("start", name)
+    log(f"updating in {name}, waiting for it to power off...")
+    inspect = f"inspect with: virsh console {name}  (log: /var/log/cloud-init-output.log; then: box rm {name})"
+    deadline = time.monotonic() + 1800
+    while virsh("domstate", name) != "shut off":
+        if time.monotonic() > deadline:
+            die(f"update did not finish; {inspect}")
+        if (guest_run(name, "/usr/bin/cloud-init", "status") or "").startswith("status: error"):
+            die(f"update failed inside {name}; {inspect}")
+        time.sleep(5)
+    tmp = out.with_suffix(".qcow2.tmp")
+    subprocess.run(["qemu-img", "convert", "-O", "qcow2", str(VMS / name / "disk.qcow2"), str(tmp)], check=True)
+    tmp.chmod(0o444)
+    tmp.replace(out)
+    remove(name)
+    log(f"updated {out} ({out.stat().st_size / 2**30:.1f} GiB)")
+
+
+def cmd_start(args):
+    ensure_running(args.name)
+    wait_ssh(args.name)
+    print(f"{args.name} running at {ip_of(args.name)}")
+
+
+def cmd_ip(args):
+    print(ip_of(args.name) or die(f"no lease for {args.name}"))
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="box", description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    def vm_options(p):
+        p.add_argument("-t", "--template", default="ubuntu-26.04")
+        p.add_argument("-c", "--vcpus", type=int, default=8)
+        p.add_argument("-r", "--mem-gib", type=int, default=16)
+        p.add_argument("-d", "--disk", default="40G")
+        p.add_argument("-m", "--mount", dest="mounts", action="append", default=[], metavar="HOST[:GUEST]")
+
+    p = sub.add_parser("new", help="create an ephemeral box and open a shell")
+    p.add_argument("name", nargs="?")
+    vm_options(p)
+    p.set_defaults(func=cmd_new)
+
+    p = sub.add_parser("run", help="create a persistent box and open a shell, or attach to it")
+    p.add_argument("name", nargs="?")
+    vm_options(p)
+    p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser("create", help="define a box without starting it")
+    p.add_argument("name")
+    vm_options(p)
+    p.add_argument("-u", "--user-data", type=Path)
+    p.set_defaults(func=cmd_create)
+
+    p = sub.add_parser("ssh", help="open a shell or run a command in a box")
+    p.add_argument("name")
+    p.add_argument("command", nargs=argparse.REMAINDER)
+    p.set_defaults(func=cmd_ssh)
+
+    p = sub.add_parser("update-template", help="bake an updated base image")
+    p.add_argument("template", nargs="?", default="ubuntu-26.04")
+    p.set_defaults(func=cmd_update_template)
+
+    for cmd, func in {
+        "start": cmd_start,
+        "stop": lambda a: virsh("shutdown", a.name),
+        "kill": lambda a: virsh("destroy", a.name),
+        "ip": cmd_ip,
+        "rm": lambda a: remove(a.name),
+    }.items():
+        p = sub.add_parser(cmd)
+        p.add_argument("name")
+        p.set_defaults(func=func)
+
+    sub.add_parser("ls").set_defaults(func=lambda a: print(virsh("list", "--all")))
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
