@@ -4,19 +4,25 @@
   box new [name] [-c vcpus] [-r mem_gib] [-d disk] [-t template] [-m host[:guest]]...
       Ephemeral: create, boot, open a shell; the VM is deleted when the shell exits.
       The guest user matches you (name, uid, gid, home). Always mounted:
-        /opt/sandbox/.claude -> ~/.claude
-        ~/gitlab.intdw.org   -> ~/gitlab.intdw.org
+        $BOX_SANDBOX_DIR/.claude -> ~/.claude
+        $BOX_MOUNT_DIR           -> same path
+        $BOX_DOTFILES_PATH       -> same path, when outside $BOX_MOUNT_DIR
   box run [name] [same options]
       Like new, but the box is kept; running it again attaches to it.
   box create <name> [same options] [-u user-data]
-      Define a VM without starting it (no default mounts).
+      Like run, but only sets the box up (boot, cloud-init) without opening a shell.
   box ssh <name> [command...]      attach another shell to a running box
   box update-template [template]   upgrade the base image in a temporary VM and
                                    store it as <images>/<image>-latest.qcow2
   box start|stop|kill|ip|rm <name>
   box ls
 
-The sandbox tree is $BOX_SANDBOX_DIR (default /opt/sandbox), holding .claude/,
+A running box is also reachable as ssh host box-<name> (~/.ssh/config.d/box-<name>,
+kept pointing at the current IP). When herdr's hc is installed, a freshly set up
+box is registered as herdr machine box-<name> and removed with the box.
+
+Required environment: BOX_SANDBOX_DIR, BOX_MOUNT_DIR, BOX_DOTFILES_PATH.
+The sandbox tree is $BOX_SANDBOX_DIR, holding .claude/,
 images/, templates/<template>/ and machines/. A box boots from
 images/<image>-latest.qcow2 when present, else from the base image named in
 templates/<template>/image. Each VM lives in machines/<name>: disk.qcow2
@@ -28,6 +34,7 @@ import base64
 import json
 import os
 import pwd
+import re
 import shutil
 import subprocess
 import sys
@@ -37,15 +44,32 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(os.environ.get("BOX_SANDBOX_DIR", "/opt/sandbox"))
+
+def env_path(name):
+    """Path from a required environment variable."""
+    value = os.environ.get(name)
+    if not value:
+        sys.exit(f"box: {name} is not set")
+    return Path(value.rstrip("/") or "/")
+
+
+ROOT = env_path("BOX_SANDBOX_DIR")
 TEMPLATES = ROOT / "templates"
 IMAGES = ROOT / "images"
 VMS = ROOT / "machines"
 CLAUDE_DIR = ROOT / ".claude"
-GITLAB_DIR = Path.home() / "gitlab.intdw.org"
+MOUNT_DIR = env_path("BOX_MOUNT_DIR")
+DOTFILES_PATH = env_path("BOX_DOTFILES_PATH")
 
 ME = pwd.getpwuid(os.getuid())
-SSH_OPTS = ["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "LogLevel=ERROR"]
+SSH_OPTS = [
+    "-o",
+    "StrictHostKeyChecking=no",
+    "-o",
+    "UserKnownHostsFile=/dev/null",
+    "-o",
+    "LogLevel=ERROR",
+]
 LIBVIRT_ENV = {**os.environ, "LIBVIRT_DEFAULT_URI": "qemu:///system"}
 
 
@@ -59,7 +83,9 @@ def log(msg):
 
 def virsh(*args, check=True):
     """Run virsh and return its stdout; None if it failed and check is False."""
-    result = subprocess.run(["virsh", *args], env=LIBVIRT_ENV, capture_output=True, text=True)
+    result = subprocess.run(
+        ["virsh", *args], env=LIBVIRT_ENV, capture_output=True, text=True
+    )
     if result.returncode != 0:
         if check:
             die(result.stderr.strip())
@@ -72,7 +98,36 @@ def ssh(ip, *command, tty=False):
     return subprocess.call(["ssh", *opts, f"{ME.pw_name}@{ip}", *command])
 
 
+def ssh_alias(name):
+    return Path(ME.pw_dir) / ".ssh" / "config.d" / f"box-{name}"
+
+
+def write_ssh_alias(name, ip):
+    """Point ssh host box-<name> at the box's current IP (needs Include ~/.ssh/config.d/*)."""
+    path = ssh_alias(name)
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path.write_text(
+        f"# written by box; `box ip {name}` prints the address\n"
+        f"Host box-{name}\n"
+        f"    HostName {ip}\n"
+        f"    User {ME.pw_name}\n"
+        "    StrictHostKeyChecking no\n"
+        "    UserKnownHostsFile /dev/null\n"
+        "    LogLevel ERROR\n"
+    )
+
+
+def hc_machine(*args, quiet=False):
+    """Run `hc machine ...` when herdr's hc is installed."""
+    exe = shutil.which("hc")
+    if exe:
+        subprocess.call(
+            [exe, "machine", *args], stderr=subprocess.DEVNULL if quiet else None
+        )
+
+
 # --- VM state --------------------------------------------------------------
+
 
 def exists(name):
     return virsh("dominfo", name, check=False) is not None
@@ -83,29 +138,54 @@ def running(name):
 
 
 def ip_of(name):
-    for line in (virsh("domifaddr", name, "--source", "lease", check=False) or "").splitlines():
+    for line in (
+        virsh("domifaddr", name, "--source", "lease", check=False) or ""
+    ).splitlines():
         fields = line.split()
         if len(fields) == 4 and fields[2] == "ipv4":
             return fields[3].split("/")[0]
     return None
 
 
+def vm_dir(name):
+    """Directory of a VM; refuses names that could resolve outside the machines dir."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name):
+        die(f"invalid vm name: {name!r}")
+    path = VMS / name
+    if path.resolve().parent != VMS.resolve():
+        die(f"refusing to touch {path}: not directly inside {VMS}")
+    return path
+
+
 def remove(name):
+    path = vm_dir(name)
     if running(name):
         virsh("destroy", name)
     if exists(name):
         virsh("undefine", "--nvram", name)
-    shutil.rmtree(VMS / name, ignore_errors=True)
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    ssh_alias(name).unlink(missing_ok=True)
+    hc_machine("rm", f"box-{name}", quiet=True)
     log(f"removed {name}")
 
 
 def guest_run(name, *command):
     """Run a command inside the guest through the QEMU agent; return stdout or None."""
+
     def agent(cmd, args):
-        out = virsh("qemu-agent-command", name, json.dumps({"execute": cmd, "arguments": args}), check=False)
+        out = virsh(
+            "qemu-agent-command",
+            name,
+            json.dumps({"execute": cmd, "arguments": args}),
+            check=False,
+        )
         return json.loads(out)["return"] if out else None
 
-    started = agent("guest-exec", {"path": command[0], "arg": list(command[1:]), "capture-output": True})
+    started = agent(
+        "guest-exec",
+        {"path": command[0], "arg": list(command[1:]), "capture-output": True},
+    )
     if not started:
         return None
     for _ in range(5):
@@ -121,8 +201,25 @@ def wait_ssh(name, timeout=180):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         ip = ip_of(name)
-        if ip and subprocess.call(["ssh", *SSH_OPTS, "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
-                                   f"{ME.pw_name}@{ip}", "true"], stderr=subprocess.DEVNULL) == 0:
+        if (
+            ip
+            and subprocess.call(
+                [
+                    "ssh",
+                    *SSH_OPTS,
+                    "-o",
+                    "ConnectTimeout=2",
+                    "-o",
+                    "BatchMode=yes",
+                    f"{ME.pw_name}@{ip}",
+                    "true",
+                ],
+                stderr=subprocess.DEVNULL,
+            )
+            == 0
+        ):
+            write_ssh_alias(name, ip)
+            log(f"{name} at {ip} (ssh box-{name})")
             return ip
         time.sleep(2)
     die(f"timed out waiting for ssh on {name}")
@@ -137,13 +234,14 @@ def ensure_running(name):
 
 # --- VM creation -----------------------------------------------------------
 
+
 @dataclass
 class Spec:
     name: str
     template: str = "ubuntu-26.04"
     vcpus: int = 8
     mem_gib: int = 16
-    disk: str = "40G"
+    disk: str = "20G"
     user_data: Path | None = None
     mounts: list[tuple[Path, str]] = field(default_factory=list)
 
@@ -153,7 +251,7 @@ class Spec:
 
     @property
     def vm_dir(self):
-        return VMS / self.name
+        return vm_dir(self.name)
 
     @property
     def base_image(self):
@@ -178,10 +276,13 @@ def parse_mount(text):
 
 
 def ssh_public_key():
-    key = os.environ.get("SSH_PUBKEY")
+    key = os.environ.get("BOX_SSH_PUBKEY")
     if key:
         return key
-    for candidate in [Path.home() / ".ssh/id_ed25519.pub", *sorted(Path.home().glob(".ssh/id_*.pub"))]:
+    for candidate in [
+        Path.home() / ".ssh/id_ed25519.pub",
+        *sorted(Path.home().glob(".ssh/id_*.pub")),
+    ]:
         if candidate.exists():
             return candidate.read_text().strip()
     die("no ssh public key found in ~/.ssh")
@@ -211,8 +312,16 @@ def create(spec):
     user_data = spec.user_data or spec.template_dir / "user-data"
 
     values = {
-        "NAME": spec.name, "VCPUS": spec.vcpus, "MEM_GIB": spec.mem_gib, "VM_DIR": spec.vm_dir,
-        "USER": ME.pw_name, "UID": ME.pw_uid, "GID": ME.pw_gid, "HOME": ME.pw_dir, "SSH_KEY": ssh_public_key(),
+        "NAME": spec.name,
+        "VCPUS": spec.vcpus,
+        "MEM_GIB": spec.mem_gib,
+        "VM_DIR": spec.vm_dir,
+        "USER": ME.pw_name,
+        "UID": ME.pw_uid,
+        "GID": ME.pw_gid,
+        "HOME": ME.pw_dir,
+        "SSH_KEY": ssh_public_key(),
+        "DOTFILES": DOTFILES_PATH,
     }
     filesystems, fstab = [], ["mounts:"] if spec.mounts else []
     for i, (host, guest) in enumerate(spec.mounts):
@@ -227,35 +336,85 @@ def create(spec):
     blocks = {"@@FILESYSTEMS@@": filesystems, "@@MOUNTS@@": fstab}
 
     spec.vm_dir.mkdir()
-    (spec.vm_dir / "domain.xml").write_text(render(spec.template_dir / "domain.xml", values, blocks))
+    (spec.vm_dir / "console.log").touch()
+    (spec.vm_dir / "domain.xml").write_text(
+        render(spec.template_dir / "domain.xml", values, blocks)
+    )
     with tempfile.TemporaryDirectory() as work:
         work = Path(work)
         (work / "user-data").write_text(render(user_data, values, blocks))
-        (work / "meta-data").write_text(render(spec.template_dir / "meta-data", values, blocks))
-        subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b", str(spec.image),
-                        str(spec.vm_dir / "disk.qcow2"), spec.disk], check=True)
-        subprocess.run(["xorriso", "-as", "mkisofs", "-quiet", "-o", str(spec.vm_dir / "seed.iso"),
-                        "-V", "cidata", "-J", "-r", str(work / "user-data"), str(work / "meta-data")],
-                       check=True, stderr=subprocess.DEVNULL)
+        (work / "meta-data").write_text(
+            render(spec.template_dir / "meta-data", values, blocks)
+        )
+        subprocess.run(
+            [
+                "qemu-img",
+                "create",
+                "-q",
+                "-f",
+                "qcow2",
+                "-F",
+                "qcow2",
+                "-b",
+                str(spec.image),
+                str(spec.vm_dir / "disk.qcow2"),
+                spec.disk,
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "xorriso",
+                "-as",
+                "mkisofs",
+                "-quiet",
+                "-o",
+                str(spec.vm_dir / "seed.iso"),
+                "-V",
+                "cidata",
+                "-J",
+                "-r",
+                str(work / "user-data"),
+                str(work / "meta-data"),
+            ],
+            check=True,
+            stderr=subprocess.DEVNULL,
+        )
     virsh("define", str(spec.vm_dir / "domain.xml"))
-    log(f"created {spec.name}: {spec.vcpus} vCPU, {spec.mem_gib} GiB, {spec.disk} disk, "
-        f"{len(spec.mounts)} mount(s), image {spec.image.name}")
+    log(
+        f"created {spec.name}: {spec.vcpus} vCPU, {spec.mem_gib} GiB, {spec.disk} disk, "
+        f"{len(spec.mounts)} mount(s), image {spec.image.name}"
+    )
 
 
 # --- commands --------------------------------------------------------------
 
+
 def spec_from(args, name):
-    return Spec(name=name, template=args.template, vcpus=args.vcpus, mem_gib=args.mem_gib, disk=args.disk,
-                user_data=getattr(args, "user_data", None), mounts=[parse_mount(m) for m in args.mounts])
+    return Spec(
+        name=name,
+        template=args.template,
+        vcpus=args.vcpus,
+        mem_gib=args.mem_gib,
+        disk=args.disk,
+        user_data=getattr(args, "user_data", None),
+        mounts=[parse_mount(m) for m in args.mounts],
+    )
 
 
 def box_spec(args):
-    """Spec for a full box: the caller's defaults plus the .claude and gitlab mounts."""
-    for required in (CLAUDE_DIR, GITLAB_DIR):
+    """Spec for a full box: the caller's options plus the .claude, mount dir and dotfiles mounts."""
+    for required in (CLAUDE_DIR, MOUNT_DIR, DOTFILES_PATH):
         if not required.is_dir():
             die(f"missing {required}")
     spec = spec_from(args, args.name or f"box-{os.getpid()}")
-    spec.mounts = [(CLAUDE_DIR, f"{ME.pw_dir}/.claude"), (GITLAB_DIR, str(GITLAB_DIR)), *spec.mounts]
+    spec.mounts = [
+        (CLAUDE_DIR, f"{ME.pw_dir}/.claude"),
+        (MOUNT_DIR, str(MOUNT_DIR)),
+        *spec.mounts,
+    ]
+    if not DOTFILES_PATH.is_relative_to(MOUNT_DIR):
+        spec.mounts.append((DOTFILES_PATH, str(DOTFILES_PATH)))
     return spec
 
 
@@ -267,6 +426,9 @@ def launch(name):
     log("waiting for cloud-init (updates, mise, dotfiles)...")
     if ssh(ip, "cloud-init status --wait >/dev/null") != 0:
         log("warning: cloud-init reported errors; see /var/log/cloud-init-output.log")
+    # herdr pins the hc identity created at install, so a recreated box must be re-added
+    hc_machine("rm", f"box-{name}", quiet=True)
+    hc_machine("add", "--install", "--name", f"box-{name}", f"box-{name}")
     return ip
 
 
@@ -290,7 +452,9 @@ def cmd_run(args):
 
 
 def cmd_create(args):
-    create(spec_from(args, args.name))
+    spec = box_spec(args)
+    create(spec)
+    launch(spec.name)
 
 
 def cmd_ssh(args):
@@ -302,8 +466,14 @@ def cmd_update_template(args):
     template = args.template
     name = f"update-{template}-{datetime.now():%Y%m%d-%H%M%S}"
     # 10G: enough headroom for upgrades; boxes may still shrink to any size >= this
-    spec = Spec(name=name, template=template, vcpus=4, mem_gib=4, disk="10G",
-                user_data=TEMPLATES / template / "user-data.update")
+    spec = Spec(
+        name=name,
+        template=template,
+        vcpus=4,
+        mem_gib=4,
+        disk="10G",
+        user_data=TEMPLATES / template / "user-data.update",
+    )
     out = spec.latest_image
     create(spec)
     virsh("start", name)
@@ -313,11 +483,23 @@ def cmd_update_template(args):
     while virsh("domstate", name) != "shut off":
         if time.monotonic() > deadline:
             die(f"update did not finish; {inspect}")
-        if (guest_run(name, "/usr/bin/cloud-init", "status") or "").startswith("status: error"):
+        if (guest_run(name, "/usr/bin/cloud-init", "status") or "").startswith(
+            "status: error"
+        ):
             die(f"update failed inside {name}; {inspect}")
         time.sleep(5)
     tmp = out.with_suffix(".qcow2.tmp")
-    subprocess.run(["qemu-img", "convert", "-O", "qcow2", str(VMS / name / "disk.qcow2"), str(tmp)], check=True)
+    subprocess.run(
+        [
+            "qemu-img",
+            "convert",
+            "-O",
+            "qcow2",
+            str(VMS / name / "disk.qcow2"),
+            str(tmp),
+        ],
+        check=True,
+    )
     tmp.chmod(0o444)
     tmp.replace(out)
     remove(name)
@@ -335,8 +517,11 @@ def cmd_ip(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="box", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="box",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     def vm_options(p):
@@ -344,19 +529,28 @@ def main():
         p.add_argument("-c", "--vcpus", type=int, default=8)
         p.add_argument("-r", "--mem-gib", type=int, default=16)
         p.add_argument("-d", "--disk", default="40G")
-        p.add_argument("-m", "--mount", dest="mounts", action="append", default=[], metavar="HOST[:GUEST]")
+        p.add_argument(
+            "-m",
+            "--mount",
+            dest="mounts",
+            action="append",
+            default=[],
+            metavar="HOST[:GUEST]",
+        )
 
     p = sub.add_parser("new", help="create an ephemeral box and open a shell")
     p.add_argument("name", nargs="?")
     vm_options(p)
     p.set_defaults(func=cmd_new)
 
-    p = sub.add_parser("run", help="create a persistent box and open a shell, or attach to it")
+    p = sub.add_parser(
+        "run", help="create a persistent box and open a shell, or attach to it"
+    )
     p.add_argument("name", nargs="?")
     vm_options(p)
     p.set_defaults(func=cmd_run)
 
-    p = sub.add_parser("create", help="define a box without starting it")
+    p = sub.add_parser("create", help="create and set up a persistent box without a shell")
     p.add_argument("name")
     vm_options(p)
     p.add_argument("-u", "--user-data", type=Path)
