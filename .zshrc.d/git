@@ -61,8 +61,23 @@ _git_backup_branch () {
     git branch -a | grep -i $(git rev-parse --abbrev-ref HEAD)
 }
 
-# Searches for all files or directories named .git in GIT_REPO_DIR
-# and presents a fuzzy find list of directories to cd to
+# Prints the git repositories under directory $1, up to $2 levels deep,
+# without descending into the repositories themselves
+function _git_find_repos {
+    [ -n "$ZSH_VERSION" ] && setopt local_options null_glob
+    local dir
+    for dir in "$1"/*/; do
+        dir=${dir%/}
+        [ -d "$dir" ] || continue
+        if [ -e "$dir/.git" ]; then
+            printf '%s\n' "$dir"
+        elif [ "$2" -gt 1 ]; then
+            _git_find_repos "$dir" $(( $2 - 1 ))
+        fi
+    done
+}
+
+# Presents a fuzzy find list of the git repositories in GIT_REPO_DIR to cd to
 function _git_cd_repo {
     if [ -z "$GIT_REPO_DIR" ]; then
         echo "The GIT_REPO_DIR env var is not set!" >&2
@@ -72,17 +87,19 @@ function _git_cd_repo {
             echo "The GIT_REPO_DIR \"$GIT_REPO_DIR\" does not exist!" >&2
             return 1
         fi
+        # without trailing slashes, so the sed pattern below matches and paths stay single-slashed
+        _git_repo_root=$(printf '%s' "$GIT_REPO_DIR" | sed 's#/*$##')
 
         if [ "$#" -eq "0" ]; then
-            _git_repos=$(find "$GIT_REPO_DIR" -maxdepth 10 -name .git)
+            _git_repos=$(_git_find_repos "$_git_repo_root" 6)
             if [ -n "$_git_repos" ]; then
-                _git_repo_dir=$(echo $_git_repos | xargs dirname | sed "s#$GIT_REPO_DIR\/##" | fzf)
-                _git_repo_dir="${GIT_REPO_DIR}/${_git_repo_dir}"
+                _git_repo_dir=$(printf '%s\n' "$_git_repos" | sed "s#^$_git_repo_root/##" | fzf)
+                _git_repo_dir="${_git_repo_root}/${_git_repo_dir}"
             else
                 echo "No git repositories found in \$GIT_REPO_DIR\"" >&2
             fi
         else
-            _git_repo_dir="${GIT_REPO_DIR}/$1"
+            _git_repo_dir="${_git_repo_root}/$1"
         fi
 
         if [ -d "$_git_repo_dir" ]; then
