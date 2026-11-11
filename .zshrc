@@ -8,6 +8,7 @@
 HISTFILE=~/.zsh_history
 HISTSIZE=100000000
 SAVEHIST=100000000
+HIST_IGNORE='(box *|tree|tree *|env|env *|claude|realpath *|dig *|nslookup *|z|fg|ls|ls *|ll *|cd| cd *|rm|rm *|rmdir|rmdir *|pwd|exit|clear|gcd|gu|gd|gd *|gds *|gwa|gwa *|gwl|gwr|gwr *|git status|git add|git add *|git commit|git commit *)'
 
 autoload history-beginning-search-forward
 autoload history-beginning-search-backward
