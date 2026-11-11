@@ -245,6 +245,12 @@ if [[ $? == 0 ]]; then
   source <($KUBECTL_EXECUTABLE completion zsh)
 fi
 
+# Load coder completions
+CODER_EXECUTABLE=$(which coder 2>/dev/null)
+if [[ $? == 0 ]]; then
+  source <($CODER_EXECUTABLE completion zsh)
+fi
+
 # Source kubectl command aliases
 if [ -f "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases" ]; then
   source "${HOME}/github.com/ahmetb/kubectl-aliases/.kubectl_aliases"
