@@ -115,6 +115,7 @@ function __prompt_command() {
   local lcyan="\[\e[00;36m\]"
   local cyan="\[\e[00;96m\]"
   local reset="\[\e[0m\]"
+  local prompt_color=${PS1_COLOR:-lblue}
 
   local git_ps1=""
   if [ "$(type __git_ps1 2>/dev/null)" ]; then
@@ -131,7 +132,7 @@ function __prompt_command() {
   history -n
 
   # export set prompt
-  PS1="[\h] $(__kube_ps1)$(__venv_ps1)${lblue}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
+  PS1="[\h] $(__kube_ps1)$(__venv_ps1)${!prompt_color}$(__pwd_ps1)${reset}${git_ps1:+" $git_ps1"}\n($cexit)\$ "
 }
 
 # source git prompt if git is installed
