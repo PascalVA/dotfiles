@@ -1,4 +1,5 @@
 .envrc
 .config/nvim/lazy-lock.json
 .claude
+.bashrc.d/custom.sh
 mise.local.toml
